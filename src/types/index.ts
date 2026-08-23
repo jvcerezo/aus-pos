@@ -124,6 +124,7 @@ export interface Order {
   tableId?: string;
   tableName?: string;
   sectionName?: string;
+  floorName?: string;
   covers?: number; // Number of guests/seats
   customerName?: string;
   buzzerNumber?: string; // For cafe / takeaway buzzer
@@ -159,9 +160,19 @@ export interface PaymentRecord {
   guestLabel?: string; // e.g. "Guest 1", "Guest 2"
 }
 
+export interface FloorLevel {
+  id: string;
+  venueId: string;
+  name: string; // e.g. "Ground Floor", "Level 1 Mezzanine", "Level 2 Rooftop", "Basement Lounge"
+  shortCode: string; // e.g. "GF", "L1", "L2", "B1"
+  order: number;
+  description?: string;
+}
+
 export interface FloorSection {
   id: string;
   venueId: string;
+  floorLevelId?: string; // Multi-floor parent level
   name: string; // e.g. "Main Dining", "Terrace / Outdoor", "Bar Lounge", "Function Room"
   color?: string;
   order?: number;
@@ -170,6 +181,7 @@ export interface FloorSection {
 export interface FloorLandmark {
   id: string;
   venueId: string;
+  floorLevelId?: string; // Multi-floor parent level
   sectionId?: string; // Optional if venue-wide
   name: string; // e.g. "Main Entrance", "Kitchen Pass", "Bar Counter"
   type: 'entrance' | 'kitchen' | 'kitchen_pass' | 'bar' | 'restroom' | 'scenery' | 'terrace_view' | 'stage' | 'host_stand';
@@ -187,6 +199,7 @@ export type TableShape = 'square' | 'round' | 'rectangle' | 'booth' | 'bar_stool
 export interface RestaurantTable {
   id: string;
   venueId: string;
+  floorLevelId?: string; // Multi-floor parent level (e.g. Ground Floor, Level 1, Rooftop)
   sectionId: string;
   name: string; // e.g. "Table 1", "T12", "Booth 4", "Bar 1"
   shape: TableShape;

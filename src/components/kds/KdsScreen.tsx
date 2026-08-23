@@ -139,7 +139,7 @@ export const KdsScreen: React.FC = () => {
                     </div>
 
                     <div className="text-xs text-slate-500 mt-0.5 font-medium">
-                      Server: {order.staffName} • {formatAusTime(order.createdAt)}
+                      {order.floorName ? `${order.floorName} • ` : ''}Server: {order.staffName} • {formatAusTime(order.createdAt)}
                     </div>
                   </div>
 

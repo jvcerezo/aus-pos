@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import {
   ShoppingBag,
   Map,
-  LayoutGrid
+  LayoutGrid,
+  Building,
+  Layers
 } from 'lucide-react';
 import { useVenue } from '../../context/VenueContext';
 import { usePos } from '../../context/PosContext';
@@ -16,6 +18,7 @@ import { RealTableNode } from './RealTableNode';
 export const TableMapScreen: React.FC = () => {
   const { activeVenue } = useVenue();
   const {
+    floors,
     sections,
     tables,
     landmarks,
@@ -24,18 +27,41 @@ export const TableMapScreen: React.FC = () => {
     startNewTakeawayOrder,
   } = usePos();
 
+  const venueFloors = floors.filter(f => f.venueId === activeVenue.id).sort((a, b) => a.order - b.order);
+  const [selectedFloorId, setSelectedFloorId] = useState<string>('all');
   const [selectedSectionId, setSelectedSectionId] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'blueprint' | 'grid'>('blueprint');
   const [transferSourceTable, setTransferSourceTable] = useState<RestaurantTable | null>(null);
 
   // Filter sections, landmarks, and tables for active venue
-  const venueSections = sections.filter(s => s.venueId === activeVenue.id);
-  const venueTables = tables.filter(t => t.venueId === activeVenue.id);
-  const venueLandmarks = landmarks.filter(l => l.venueId === activeVenue.id);
+  const venueSections = sections.filter(s => {
+    if (s.venueId !== activeVenue.id) return false;
+    if (selectedFloorId !== 'all' && s.floorLevelId && s.floorLevelId !== selectedFloorId) return false;
+    return true;
+  });
 
-  const filteredTables = selectedSectionId === 'all'
-    ? venueTables
-    : venueTables.filter(t => t.sectionId === selectedSectionId);
+  const venueTables = tables.filter(t => t.venueId === activeVenue.id);
+
+  // Filter tables by floor + section
+  const filteredTables = venueTables.filter(t => {
+    // Check floor
+    if (selectedFloorId !== 'all') {
+      const tableFloorId = t.floorLevelId || sections.find(s => s.id === t.sectionId)?.floorLevelId;
+      if (tableFloorId && tableFloorId !== selectedFloorId) return false;
+    }
+    // Check section
+    if (selectedSectionId !== 'all' && t.sectionId !== selectedSectionId) {
+      return false;
+    }
+    return true;
+  });
+
+  // Filter landmarks by floor
+  const filteredLandmarks = landmarks.filter(l => {
+    if (l.venueId !== activeVenue.id) return false;
+    if (selectedFloorId !== 'all' && l.floorLevelId && l.floorLevelId !== selectedFloorId) return false;
+    return true;
+  });
 
   const handleTableNodeClick = (table: RestaurantTable) => {
     sounds.playTap();
@@ -44,7 +70,86 @@ export const TableMapScreen: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-5.75rem)] bg-slate-100 overflow-hidden select-none">
-      {/* Top Floor Bar: Sections & View Toggle (Larger Text) */}
+      {/* 1. Multi-Floor Level Switcher (Elevator Bar) */}
+      {venueFloors.length > 1 && (
+        <div className="bg-slate-900 text-white px-4 py-2 flex items-center justify-between shadow-xs z-10">
+          <div className="flex items-center space-x-2">
+            <Building className="w-4 h-4 text-slate-400" />
+            <span className="text-xs font-black uppercase tracking-wider text-slate-300">
+              Floor Level:
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-1.5 overflow-x-auto">
+            <button
+              onClick={() => {
+                sounds.playTap();
+                setSelectedFloorId('all');
+                setSelectedSectionId('all');
+              }}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+                selectedFloorId === 'all'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+              }`}
+            >
+              All Levels ({venueTables.length})
+            </button>
+
+            {venueFloors.map(floor => {
+              const floorTables = venueTables.filter(
+                t => (t.floorLevelId || sections.find(s => s.id === t.sectionId)?.floorLevelId) === floor.id
+              );
+              const occupied = floorTables.filter(t => t.status !== 'available').length;
+              const isSelected = selectedFloorId === floor.id;
+
+              return (
+                <button
+                  key={floor.id}
+                  onClick={() => {
+                    sounds.playTap();
+                    setSelectedFloorId(floor.id);
+                    setSelectedSectionId('all');
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-2 ${
+                    isSelected
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+                  }`}
+                >
+                  <span className="px-1.5 py-0.2 rounded bg-slate-950/20 font-mono text-[10px]">
+                    {floor.shortCode}
+                  </span>
+                  <span>{floor.name}</span>
+                  <span
+                    className={`font-mono text-[11px] px-1.5 py-0.2 rounded font-bold ${
+                      isSelected
+                        ? 'bg-slate-200 text-slate-900'
+                        : 'bg-slate-900 text-slate-300'
+                    }`}
+                  >
+                    {occupied}/{floorTables.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Counter / Bar CTA */}
+          <button
+            onClick={() => {
+              sounds.playTap();
+              startNewTakeawayOrder();
+            }}
+            className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-xs"
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>+ Takeaway / Bar</span>
+          </button>
+        </div>
+      )}
+
+      {/* 2. Sub-Sections & View Switcher Bar */}
       <div className="p-3 bg-white border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         {/* Section Tabs */}
         <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5">
@@ -53,13 +158,14 @@ export const TableMapScreen: React.FC = () => {
               sounds.playTap();
               setSelectedSectionId('all');
             }}
-            className={`px-3.5 py-2 rounded-xl text-sm font-bold transition border ${
+            className={`px-3.5 py-2 rounded-xl text-sm font-bold transition border flex items-center space-x-1.5 ${
               selectedSectionId === 'all'
                 ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                 : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'
             }`}
           >
-            All Floor Areas ({venueTables.length})
+            <Layers className="w-3.5 h-3.5" />
+            <span>All Sections ({filteredTables.length})</span>
           </button>
 
           {venueSections.map(s => {
@@ -79,6 +185,10 @@ export const TableMapScreen: React.FC = () => {
                     : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'
                 }`}
               >
+                <div
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: s.color || '#3b82f6' }}
+                />
                 <span>{s.name}</span>
                 <span className="font-mono text-xs opacity-75">
                   ({occupied}/{count})
@@ -88,18 +198,20 @@ export const TableMapScreen: React.FC = () => {
           })}
         </div>
 
-        {/* Action Buttons: Takeaway + View Switcher */}
+        {/* View Switcher: Blueprint vs Grid */}
         <div className="flex items-center space-x-2">
-          <button
-            onClick={() => {
-              sounds.playTap();
-              startNewTakeawayOrder();
-            }}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 rounded-xl text-xs sm:text-sm font-bold transition"
-          >
-            <ShoppingBag className="w-4 h-4" />
-            <span>+ Counter / Bar Order</span>
-          </button>
+          {venueFloors.length <= 1 && (
+            <button
+              onClick={() => {
+                sounds.playTap();
+                startNewTakeawayOrder();
+              }}
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 rounded-xl text-xs sm:text-sm font-bold transition"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>+ Counter / Bar Order</span>
+            </button>
+          )}
 
           <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
             <button
@@ -107,7 +219,7 @@ export const TableMapScreen: React.FC = () => {
                 sounds.playTap();
                 setViewMode('blueprint');
               }}
-              className={`p-1.5 rounded-lg text-xs font-bold transition ${
+              className={`p-2 rounded-lg text-xs font-bold transition ${
                 viewMode === 'blueprint'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-500 hover:text-slate-900'
@@ -122,7 +234,7 @@ export const TableMapScreen: React.FC = () => {
                 sounds.playTap();
                 setViewMode('grid');
               }}
-              className={`p-1.5 rounded-lg text-xs font-bold transition ${
+              className={`p-2 rounded-lg text-xs font-bold transition ${
                 viewMode === 'grid'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-500 hover:text-slate-900'
@@ -152,7 +264,7 @@ export const TableMapScreen: React.FC = () => {
             />
 
             {/* Architectural Landmarks */}
-            {venueLandmarks.map(lm => (
+            {filteredLandmarks.map(lm => (
               <div
                 key={lm.id}
                 style={{
@@ -190,12 +302,14 @@ export const TableMapScreen: React.FC = () => {
               {filteredTables.map(table => {
                 const activeOrder = allOrders.find(o => o.tableId === table.id && !o.isPaid);
                 const orderTotals = activeOrder ? calculateOrderTotals(activeOrder, activeVenue) : null;
+                const section = sections.find(s => s.id === table.sectionId);
+                const floor = floors.find(f => f.id === (table.floorLevelId || section?.floorLevelId));
 
                 return (
                   <button
                     key={table.id}
                     onClick={() => handleTableNodeClick(table)}
-                    className={`p-4 rounded-2xl border-2 text-left transition transform active:scale-95 shadow-xs flex flex-col justify-between min-h-[120px] ${
+                    className={`p-4 rounded-2xl border-2 text-left transition transform active:scale-95 shadow-xs flex flex-col justify-between min-h-[125px] ${
                       table.status === 'available'
                         ? 'bg-white border-emerald-500 hover:border-emerald-600'
                         : table.status === 'occupied'
@@ -203,21 +317,29 @@ export const TableMapScreen: React.FC = () => {
                         : 'bg-amber-50 border-amber-600'
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <span className="font-black text-lg text-slate-900 font-mono">
-                        {table.name}
-                      </span>
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded capitalize ${
-                          table.status === 'available'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : table.status === 'occupied'
-                            ? 'bg-sky-100 text-sky-900'
-                            : 'bg-amber-100 text-amber-900'
-                        }`}
-                      >
-                        {table.status}
-                      </span>
+                    <div>
+                      <div className="flex items-start justify-between">
+                        <span className="font-black text-lg text-slate-900 font-mono">
+                          {table.name}
+                        </span>
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded capitalize ${
+                            table.status === 'available'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : table.status === 'occupied'
+                              ? 'bg-sky-100 text-sky-900'
+                              : 'bg-amber-100 text-amber-900'
+                          }`}
+                        >
+                          {table.status}
+                        </span>
+                      </div>
+
+                      {floor && (
+                        <div className="text-[11px] font-bold text-slate-500 mt-0.5">
+                          {floor.shortCode} • {section?.name || 'Main'}
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-2 flex items-center justify-between text-xs text-slate-600">

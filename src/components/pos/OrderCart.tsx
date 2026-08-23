@@ -191,6 +191,11 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
             <h3 className="font-bold text-base text-slate-900 truncate max-w-[150px]">
               {currentOrder.tableName ? `Table ${currentOrder.tableName}` : (currentOrder.customerName || 'Takeaway')}
             </h3>
+            {currentOrder.floorName && (
+              <span className="text-xs bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-bold">
+                {currentOrder.floorName.split(' ')[0]}
+              </span>
+            )}
             {currentOrder.buzzerNumber && (
               <span className="text-xs bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">
                 Buzzer {currentOrder.buzzerNumber}
@@ -198,7 +203,7 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
             )}
           </div>
           <div className="text-xs text-slate-500 mt-0.5">
-            {currentOrder.staffName} • {formatAusTime(currentOrder.createdAt)}
+            {currentOrder.floorName ? `${currentOrder.floorName} • ` : ''}{currentOrder.staffName} • {formatAusTime(currentOrder.createdAt)}
           </div>
         </div>
 

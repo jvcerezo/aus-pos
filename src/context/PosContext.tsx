@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type {
+  FloorLevel,
   FloorLandmark,
   FloorSection,
   MenuCategory,
@@ -13,7 +14,7 @@ import type {
 } from '../types';
 
 import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS } from '../data/initialMenu';
-import { INITIAL_LANDMARKS, INITIAL_SECTIONS, INITIAL_TABLES } from '../data/initialTables';
+import { INITIAL_FLOORS, INITIAL_LANDMARKS, INITIAL_SECTIONS, INITIAL_TABLES } from '../data/initialTables';
 import { INITIAL_ORDERS, INITIAL_SHIFT } from '../data/initialOrders';
 import { useVenue } from './VenueContext';
 import { useAuth } from './AuthContext';
@@ -26,7 +27,11 @@ interface PosContextType {
   activeMode: 'tables' | 'pos' | 'kds' | 'reports' | 'admin';
   setActiveMode: (mode: 'tables' | 'pos' | 'kds' | 'reports' | 'admin') => void;
 
-  // Floor Tables, Sections & Landmarks (Admin Customization)
+  // Floor Levels, Tables, Sections & Landmarks (Admin Customization)
+  floors: FloorLevel[];
+  addFloor: (floor: FloorLevel) => void;
+  updateFloor: (floor: FloorLevel) => void;
+  deleteFloor: (floorId: string) => void;
   sections: FloorSection[];
   tables: RestaurantTable[];
   landmarks: FloorLandmark[];
@@ -146,13 +151,19 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [activeVenue.id, activeVenue.serviceType]);
 
   // Persistence keys
+  const FLOORS_KEY = 'aus_pos_floors_v1';
   const SECTIONS_KEY = 'aus_pos_sections_v1';
   const TABLES_KEY = 'aus_pos_tables_v1';
   const LANDMARKS_KEY = 'aus_pos_landmarks_v1';
   const CATEGORIES_KEY = 'aus_pos_categories_v1';
   const MENU_KEY = 'aus_pos_menu_v1';
 
-  // Floor Tables, Sections & Landmarks State (with LocalStorage)
+  // Floor Levels, Tables, Sections & Landmarks State (with LocalStorage)
+  const [floors, setFloors] = useState<FloorLevel[]>(() => {
+    const saved = localStorage.getItem(FLOORS_KEY);
+    return saved ? JSON.parse(saved) : INITIAL_FLOORS;
+  });
+
   const [sections, setSections] = useState<FloorSection[]>(() => {
     const saved = localStorage.getItem(SECTIONS_KEY);
     return saved ? JSON.parse(saved) : INITIAL_SECTIONS;
@@ -184,6 +195,10 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Sync to LocalStorage
+  useEffect(() => {
+    localStorage.setItem(FLOORS_KEY, JSON.stringify(floors));
+  }, [floors]);
+
   useEffect(() => {
     localStorage.setItem(SECTIONS_KEY, JSON.stringify(sections));
   }, [sections]);
@@ -233,6 +248,9 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (existing) {
       setCurrentOrder(existing);
     } else {
+      const sec = sections.find(s => s.id === table.sectionId);
+      const flr = floors.find(f => f.id === (table.floorLevelId || sec?.floorLevelId));
+
       // Create new table order
       const newOrder: Order = {
         id: generateId('ord'),
@@ -241,7 +259,8 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         orderType: 'dine_in',
         tableId: table.id,
         tableName: table.name,
-        sectionName: sections.find(s => s.id === table.sectionId)?.name || 'Main',
+        sectionName: sec?.name || 'Main',
+        floorName: flr?.name,
         covers: table.capacity,
         staffId: currentStaff.id,
         staffName: currentStaff.name,
@@ -299,11 +318,15 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Find order
     const order = allOrders.find(o => o.tableId === fromTableId && !o.isPaid);
     if (order) {
+      const sec = sections.find(s => s.id === toTable.sectionId);
+      const flr = floors.find(f => f.id === (toTable.floorLevelId || sec?.floorLevelId));
+
       const updatedOrder = {
         ...order,
         tableId: toTable.id,
         tableName: toTable.name,
-        sectionName: sections.find(s => s.id === toTable.sectionId)?.name || '',
+        sectionName: sec?.name || '',
+        floorName: flr?.name,
       };
 
       setAllOrders(prev => prev.map(o => (o.id === order.id ? updatedOrder : o)));
@@ -718,6 +741,18 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTables(prev => prev.filter(t => t.sectionId !== sectionId));
   };
 
+  // Floor Level Management CRUD
+  const addFloor = (floor: FloorLevel) => {
+    setFloors(prev => [...prev, floor]);
+  };
+  const updateFloor = (floor: FloorLevel) => {
+    setFloors(prev => prev.map(f => (f.id === floor.id ? floor : f)));
+  };
+  const deleteFloor = (floorId: string) => {
+    setFloors(prev => prev.filter(f => f.id !== floorId));
+    // Re-assign sections or keep orphaned
+  };
+
   // Landmarks CRUD
   const addLandmark = (landmark: FloorLandmark) => {
     setLandmarks(prev => [...prev, landmark]);
@@ -761,6 +796,10 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleUiTheme,
         isSimpleMode,
         toggleSimpleMode,
+        floors,
+        addFloor,
+        updateFloor,
+        deleteFloor,
         sections,
         tables,
         landmarks,

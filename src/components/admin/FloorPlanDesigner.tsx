@@ -4,19 +4,23 @@ import {
   Trash2,
   Move,
   Users,
-  Compass
+  Compass,
+  Building,
+  Layers
 } from 'lucide-react';
 import { useVenue } from '../../context/VenueContext';
 import { usePos } from '../../context/PosContext';
-import type { FloorLandmark, FloorSection, RestaurantTable, TableShape } from '../../types';
+import type { FloorLevel, FloorLandmark, FloorSection, RestaurantTable, TableShape } from '../../types';
 import { generateId } from '../../utils/formatters';
 
 export const FloorPlanDesigner: React.FC = () => {
   const { activeVenue } = useVenue();
   const {
+    floors,
     sections,
     tables,
     landmarks,
+    addFloor,
     addTable,
     updateTable,
     deleteTable,
@@ -26,15 +30,27 @@ export const FloorPlanDesigner: React.FC = () => {
     deleteLandmark,
   } = usePos();
 
+  const venueFloors = floors.filter(f => f.venueId === activeVenue.id).sort((a, b) => a.order - b.order);
+  const [activeFloorId, setActiveFloorId] = useState<string>('all');
   const [activeSectionId, setActiveSectionId] = useState<string>('all');
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+
+  const [isAddFloorOpen, setIsAddFloorOpen] = useState(false);
   const [isAddTableOpen, setIsAddTableOpen] = useState(false);
   const [isAddSectionOpen, setIsAddSectionOpen] = useState(false);
   const [isAddLandmarkOpen, setIsAddLandmarkOpen] = useState(false);
 
+  // New Floor Level Form State
+  const [newFloor, setNewFloor] = useState<Partial<FloorLevel>>({
+    name: 'Level 2 (Rooftop Deck)',
+    shortCode: 'L2',
+    description: 'Open air rooftop terrace',
+  });
+
   // New Table Form State
   const [newTable, setNewTable] = useState<Partial<RestaurantTable>>({
     name: 'T15',
+    floorLevelId: venueFloors[0]?.id || '',
     sectionId: sections[0]?.id || 'sec_main',
     shape: 'square',
     capacity: 4,
@@ -46,11 +62,13 @@ export const FloorPlanDesigner: React.FC = () => {
 
   // New Section Form State
   const [newSectionName, setNewSectionName] = useState('');
+  const [newSectionFloorId, setNewSectionFloorId] = useState(venueFloors[0]?.id || '');
   const [newSectionColor, setNewSectionColor] = useState('#3b82f6');
 
   // New Landmark Form State
   const [newLandmark, setNewLandmark] = useState<Partial<FloorLandmark>>({
     name: 'Bar Counter',
+    floorLevelId: venueFloors[0]?.id || '',
     type: 'bar',
     x: 20,
     y: 15,
@@ -59,12 +77,47 @@ export const FloorPlanDesigner: React.FC = () => {
     label: 'BAR & TAPS',
   });
 
+  const venueSections = sections.filter(s => {
+    if (s.venueId !== activeVenue.id) return false;
+    if (activeFloorId !== 'all' && s.floorLevelId && s.floorLevelId !== activeFloorId) return false;
+    return true;
+  });
+
   const venueTables = tables.filter(t => {
-    if (activeSectionId === 'all') return true;
-    return t.sectionId === activeSectionId;
+    if (t.venueId !== activeVenue.id) return false;
+    if (activeFloorId !== 'all') {
+      const tableFloorId = t.floorLevelId || sections.find(s => s.id === t.sectionId)?.floorLevelId;
+      if (tableFloorId && tableFloorId !== activeFloorId) return false;
+    }
+    if (activeSectionId !== 'all' && t.sectionId !== activeSectionId) return false;
+    return true;
+  });
+
+  const venueLandmarks = landmarks.filter(l => {
+    if (l.venueId !== activeVenue.id) return false;
+    if (activeFloorId !== 'all' && l.floorLevelId && l.floorLevelId !== activeFloorId) return false;
+    return true;
   });
 
   const selectedTable = tables.find(t => t.id === selectedTableId);
+
+  const handleSaveNewFloor = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFloor.name || !newFloor.shortCode) return;
+
+    const floorToCreate: FloorLevel = {
+      id: generateId('floor'),
+      venueId: activeVenue.id,
+      name: newFloor.name,
+      shortCode: newFloor.shortCode.toUpperCase(),
+      order: venueFloors.length + 1,
+      description: newFloor.description || '',
+    };
+
+    addFloor(floorToCreate);
+    setActiveFloorId(floorToCreate.id);
+    setIsAddFloorOpen(false);
+  };
 
   const handleSaveNewTable = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +126,7 @@ export const FloorPlanDesigner: React.FC = () => {
     const tableToCreate: RestaurantTable = {
       id: generateId('tbl'),
       venueId: activeVenue.id,
+      floorLevelId: newTable.floorLevelId || (activeFloorId !== 'all' ? activeFloorId : venueFloors[0]?.id),
       sectionId: newTable.sectionId || sections[0]?.id || 'sec_main',
       name: newTable.name,
       shape: (newTable.shape as TableShape) || 'square',
@@ -96,6 +150,7 @@ export const FloorPlanDesigner: React.FC = () => {
     const sectionToCreate: FloorSection = {
       id: generateId('sec'),
       venueId: activeVenue.id,
+      floorLevelId: newSectionFloorId || (activeFloorId !== 'all' ? activeFloorId : venueFloors[0]?.id),
       name: newSectionName.trim(),
       color: newSectionColor,
       order: sections.length + 1,
@@ -114,6 +169,7 @@ export const FloorPlanDesigner: React.FC = () => {
     const landmarkToCreate: FloorLandmark = {
       id: generateId('lmk'),
       venueId: activeVenue.id,
+      floorLevelId: newLandmark.floorLevelId || (activeFloorId !== 'all' ? activeFloorId : venueFloors[0]?.id),
       name: newLandmark.name,
       type: (newLandmark.type as any) || 'bar',
       x: Number(newLandmark.x) || 20,
@@ -128,24 +184,88 @@ export const FloorPlanDesigner: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-8.5rem)] overflow-hidden">
-      {/* Top Toolbar */}
-      <div className="bg-white p-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+    <div className="flex-1 flex flex-col h-[calc(100vh-8.75rem)] overflow-hidden select-none">
+      {/* 1. Floor Level Selector Bar (Elevator Bar) */}
+      <div className="bg-slate-900 text-white px-4 py-2 flex items-center justify-between shadow-xs">
+        <div className="flex items-center space-x-2">
+          <Building className="w-4 h-4 text-slate-400" />
+          <span className="text-xs font-black uppercase tracking-wider text-slate-300">
+            Designing Floor:
+          </span>
+        </div>
+
+        <div className="flex items-center space-x-1.5 overflow-x-auto">
+          <button
+            onClick={() => {
+              setActiveFloorId('all');
+              setActiveSectionId('all');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+              activeFloorId === 'all'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+            }`}
+          >
+            All Levels ({tables.filter(t => t.venueId === activeVenue.id).length})
+          </button>
+
+          {venueFloors.map(floor => {
+            const count = tables.filter(
+              t => t.venueId === activeVenue.id &&
+                (t.floorLevelId || sections.find(s => s.id === t.sectionId)?.floorLevelId) === floor.id
+            ).length;
+            const isSelected = activeFloorId === floor.id;
+
+            return (
+              <button
+                key={floor.id}
+                onClick={() => {
+                  setActiveFloorId(floor.id);
+                  setActiveSectionId('all');
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-2 ${
+                  isSelected
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                <span className="px-1.5 py-0.2 rounded bg-slate-950/20 font-mono text-[10px]">
+                  {floor.shortCode}
+                </span>
+                <span>{floor.name}</span>
+                <span className="font-mono text-[11px] opacity-75">({count})</span>
+              </button>
+            );
+          })}
+
+          <button
+            onClick={() => setIsAddFloorOpen(true)}
+            className="flex items-center space-x-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl text-xs font-bold transition border border-slate-700"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Add Floor Level</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Top Toolbar: Section Tabs + Actions */}
+      <div className="bg-white p-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-xs">
         {/* Section Tabs */}
-        <div className="flex items-center space-x-1 overflow-x-auto">
+        <div className="flex items-center space-x-1.5 overflow-x-auto">
           <button
             onClick={() => setActiveSectionId('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap border ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap border flex items-center space-x-1 ${
               activeSectionId === 'all'
                 ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                 : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
             }`}
           >
-            All Floor Areas ({tables.length})
+            <Layers className="w-3.5 h-3.5" />
+            <span>All Sections ({venueTables.length})</span>
           </button>
 
-          {sections.map(s => {
-            const count = tables.filter(t => t.sectionId === s.id).length;
+          {venueSections.map(s => {
+            const count = tables.filter(t => t.sectionId === s.id && t.venueId === activeVenue.id).length;
             return (
               <button
                 key={s.id}
@@ -196,11 +316,11 @@ export const FloorPlanDesigner: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Designer Area */}
+      {/* 3. Main Designer Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left: 2D Interactive Blueprint Canvas */}
         <div className="flex-1 bg-slate-100 p-4 relative overflow-auto select-none flex items-center justify-center">
-          <div className="w-[1000px] h-[650px] bg-white rounded-2xl border-2 border-dashed border-slate-300 relative shadow-sm overflow-hidden">
+          <div className="w-[1000px] h-[650px] bg-white rounded-3xl border-2 border-dashed border-slate-300 relative shadow-sm overflow-hidden shrink-0">
             {/* Grid Pattern */}
             <div
               className="absolute inset-0 opacity-15 pointer-events-none"
@@ -213,7 +333,7 @@ export const FloorPlanDesigner: React.FC = () => {
             />
 
             {/* Architectural Landmarks */}
-            {landmarks.map(lm => (
+            {venueLandmarks.map(lm => (
               <div
                 key={lm.id}
                 style={{
@@ -222,7 +342,7 @@ export const FloorPlanDesigner: React.FC = () => {
                   width: `${lm.width}px`,
                   height: `${lm.height}px`,
                 }}
-                className="absolute z-0 bg-slate-200/80 border border-slate-300 rounded-lg flex items-center justify-center px-2 text-[11px] font-black uppercase tracking-wider text-slate-600 shadow-2xs"
+                className="absolute z-0 bg-slate-200/80 border border-slate-300 rounded-xl flex items-center justify-center px-2 text-[11px] font-black uppercase tracking-wider text-slate-600 shadow-2xs"
               >
                 <span>{lm.label || lm.name}</span>
                 <button
@@ -263,9 +383,9 @@ export const FloorPlanDesigner: React.FC = () => {
                   }`}
                 >
                   {/* Table Label */}
-                  <span className="font-bold text-xs font-mono">{t.name}</span>
+                  <span className="font-bold text-xs sm:text-sm font-mono">{t.name}</span>
                   <div className="flex items-center space-x-0.5 text-[10px] opacity-75">
-                    <Users className="w-2.5 h-2.5" />
+                    <Users className="w-3 h-3" />
                     <span>{t.capacity}p</span>
                   </div>
 
@@ -281,7 +401,7 @@ export const FloorPlanDesigner: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Selected Table Inspector & Position Controls */}
+        {/* Right: Selected Table Inspector */}
         <div className="w-80 bg-white border-l border-slate-200 p-4 flex flex-col justify-between overflow-y-auto">
           {selectedTable ? (
             <div className="space-y-4">
@@ -303,7 +423,7 @@ export const FloorPlanDesigner: React.FC = () => {
                 </button>
               </div>
 
-              {/* Table Name & Area */}
+              {/* Table Name, Floor & Area */}
               <div className="space-y-2.5 text-xs">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Table Name / Number</label>
@@ -316,13 +436,28 @@ export const FloorPlanDesigner: React.FC = () => {
                 </div>
 
                 <div>
+                  <label className="font-bold text-slate-700 block mb-1">Floor Level</label>
+                  <select
+                    value={selectedTable.floorLevelId || venueFloors[0]?.id}
+                    onChange={e => updateTable({ ...selectedTable, floorLevelId: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900 focus:outline-none font-bold"
+                  >
+                    {venueFloors.map(f => (
+                      <option key={f.id} value={f.id}>
+                        {f.shortCode} • {f.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
                   <label className="font-bold text-slate-700 block mb-1">Floor Section</label>
                   <select
                     value={selectedTable.sectionId}
                     onChange={e => updateTable({ ...selectedTable, sectionId: e.target.value })}
                     className="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900 focus:outline-none"
                   >
-                    {sections.map(s => (
+                    {sections.filter(s => s.venueId === activeVenue.id).map(s => (
                       <option key={s.id} value={s.id}>
                         {s.name}
                       </option>
@@ -403,7 +538,7 @@ export const FloorPlanDesigner: React.FC = () => {
               <Move className="w-8 h-8 mb-2 stroke-1" />
               <h4 className="font-bold text-xs text-slate-700">Select a Table</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Click any table on the blueprint canvas to edit its shape, capacity, or position coordinates.
+                Click any table on the blueprint canvas to edit its floor level, shape, capacity, or position coordinates.
               </p>
             </div>
           )}
@@ -411,11 +546,74 @@ export const FloorPlanDesigner: React.FC = () => {
           {/* Quick Add Tip */}
           <div className="pt-3 border-t border-slate-200 text-center">
             <span className="text-[10px] text-slate-400">
-              Changes auto-save instantly to live register floor.
+              Changes auto-save instantly to live floor maps.
             </span>
           </div>
         </div>
       </div>
+
+      {/* Modal: Add New Floor Level */}
+      {isAddFloorOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-300 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative text-slate-900">
+            <h3 className="text-base font-bold text-slate-900 mb-3">Add Floor Level / Story</h3>
+
+            <form onSubmit={handleSaveNewFloor} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Floor Level Name</label>
+                <input
+                  type="text"
+                  value={newFloor.name || ''}
+                  onChange={e => setNewFloor({ ...newFloor, name: e.target.value })}
+                  placeholder="e.g. Level 2 (Rooftop Terrace)"
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold text-slate-900 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Short Code</label>
+                <input
+                  type="text"
+                  maxLength={4}
+                  value={newFloor.shortCode || ''}
+                  onChange={e => setNewFloor({ ...newFloor, shortCode: e.target.value.toUpperCase() })}
+                  placeholder="L2"
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 font-mono font-bold text-slate-900 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Description / Notes</label>
+                <input
+                  type="text"
+                  value={newFloor.description || ''}
+                  onChange={e => setNewFloor({ ...newFloor, description: e.target.value })}
+                  placeholder="Open air ocean view terrace"
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setIsAddFloorOpen(false)}
+                  className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-bold text-xs shadow-xs"
+                >
+                  Add Floor Level
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal: Add New Table */}
       {isAddTableOpen && (
@@ -436,19 +634,36 @@ export const FloorPlanDesigner: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Floor Section</label>
-                <select
-                  value={newTable.sectionId}
-                  onChange={e => setNewTable({ ...newTable, sectionId: e.target.value })}
-                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900 focus:outline-none"
-                >
-                  {sections.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Floor Level</label>
+                  <select
+                    value={newTable.floorLevelId}
+                    onChange={e => setNewTable({ ...newTable, floorLevelId: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900 focus:outline-none font-bold"
+                  >
+                    {venueFloors.map(f => (
+                      <option key={f.id} value={f.id}>
+                        {f.shortCode} • {f.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Floor Section</label>
+                  <select
+                    value={newTable.sectionId}
+                    onChange={e => setNewTable({ ...newTable, sectionId: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900 focus:outline-none"
+                  >
+                    {sections.filter(s => s.venueId === activeVenue.id).map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -508,6 +723,21 @@ export const FloorPlanDesigner: React.FC = () => {
 
             <form onSubmit={handleSaveNewSection} className="space-y-3 text-xs">
               <div>
+                <label className="font-bold text-slate-700 block mb-1">Floor Level</label>
+                <select
+                  value={newSectionFloorId}
+                  onChange={e => setNewSectionFloorId(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900 focus:outline-none font-bold"
+                >
+                  {venueFloors.map(f => (
+                    <option key={f.id} value={f.id}>
+                      {f.shortCode} • {f.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="font-bold text-slate-700 block mb-1">Area Name</label>
                 <input
                   type="text"
@@ -563,6 +793,21 @@ export const FloorPlanDesigner: React.FC = () => {
             <h3 className="text-base font-bold text-slate-900 mb-3">Add Floor Landmark</h3>
 
             <form onSubmit={handleSaveNewLandmark} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Floor Level</label>
+                <select
+                  value={newLandmark.floorLevelId}
+                  onChange={e => setNewLandmark({ ...newLandmark, floorLevelId: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-900 focus:outline-none font-bold"
+                >
+                  {venueFloors.map(f => (
+                    <option key={f.id} value={f.id}>
+                      {f.shortCode} • {f.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Landmark Type / Name</label>
                 <select
