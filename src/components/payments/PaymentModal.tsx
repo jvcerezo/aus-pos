@@ -34,7 +34,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   const [paymentTab, setPaymentTab] = useState<'card' | 'cash'>('card');
   const [tipPercent, setTipPercent] = useState<number>(0);
-  const [customTip, setCustomTip] = useState<string>('');
+  const [customTip] = useState<string>('');
   const [isEftposTerminalOpen, setIsEftposTerminalOpen] = useState(false);
 
   if (!isOpen || !currentOrder) return null;
@@ -102,44 +102,44 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg p-6 shadow-2xl relative text-white">
+      <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+        <div className="bg-white border border-slate-300 rounded-2xl w-full max-w-md p-5 shadow-2xl relative text-slate-900">
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800 transition"
+            className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition"
           >
             <X className="w-5 h-5" />
           </button>
 
           {/* Modal Header */}
-          <div className="text-center mb-6">
-            <div className="flex items-center justify-center space-x-2 text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">
-              <Receipt className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Australian Payment Gateway</span>
+          <div className="text-center mb-5">
+            <div className="flex items-center justify-center space-x-1.5 text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">
+              <Receipt className="w-3.5 h-3.5 text-slate-600" />
+              <span>Payment Gateway</span>
             </div>
-            <h2 className="text-2xl font-black text-white">
-              {guestLabel ? `Pay ${guestLabel}` : 'Settle Bill'}
+            <h2 className="text-xl font-bold text-slate-900">
+              {guestLabel ? `Pay ${guestLabel}` : 'Settle Amount'}
             </h2>
-            <div className="text-3xl font-black font-mono text-emerald-400 mt-2">
+            <div className="text-3xl font-black font-mono text-slate-900 mt-1">
               {formatAud(activeBaseAmount + activeTipAmount)}
             </div>
           </div>
 
           {/* Optional Gratuity / Tip Selector */}
-          <div className="mb-6 bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
+          <div className="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-300 flex items-center space-x-1.5">
-                <Heart className="w-3.5 h-3.5 text-rose-400" />
-                <span>Hospitality Tip / Gratuity (Optional)</span>
+              <span className="text-xs font-bold text-slate-700 flex items-center space-x-1">
+                <Heart className="w-3.5 h-3.5 text-rose-500" />
+                <span>Tip / Gratuity (Optional)</span>
               </span>
               {activeTipAmount > 0 && (
-                <span className="text-xs font-mono font-bold text-amber-400">
+                <span className="text-xs font-mono font-bold text-slate-900">
                   +{formatAud(activeTipAmount)}
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               {tipPresets.map(t => (
                 <button
                   key={t.val}
@@ -147,12 +147,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   onClick={() => {
                     sounds.playTap();
                     setTipPercent(t.val);
-                    setCustomTip('');
                   }}
-                  className={`py-2 rounded-xl text-xs font-bold border transition ${
-                    tipPercent === t.val && !customTip
-                      ? 'bg-amber-500/20 border-amber-500 text-amber-300'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  className={`py-1.5 rounded-lg text-xs font-bold border transition ${
+                    tipPercent === t.val
+                      ? 'bg-slate-900 text-white border-slate-900'
+                      : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   {t.label}
@@ -161,21 +160,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
           </div>
 
-          {/* Payment Method Selector Tabs */}
-          <div className="grid grid-cols-2 gap-2 mb-6">
+          {/* Payment Method Tabs */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
             <button
               onClick={() => {
                 sounds.playTap();
                 setPaymentTab('card');
               }}
-              className={`p-3 rounded-2xl border flex items-center justify-center space-x-2 transition ${
+              className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition ${
                 paymentTab === 'card'
-                  ? 'bg-sky-600 border-sky-500 text-white shadow-lg'
-                  : 'bg-slate-800/80 border-slate-700 text-slate-400'
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                  : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
               }`}
             >
               <CreditCard className="w-4 h-4" />
-              <span className="font-bold text-xs">Australian EFTPOS / Card</span>
+              <span className="font-bold text-xs">Australian EFTPOS</span>
             </button>
 
             <button
@@ -183,39 +182,49 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 sounds.playTap();
                 setPaymentTab('cash');
               }}
-              className={`p-3 rounded-2xl border flex items-center justify-center space-x-2 transition ${
+              className={`p-2.5 rounded-xl border flex items-center justify-center space-x-2 transition ${
                 paymentTab === 'cash'
-                  ? 'bg-sky-600 border-sky-500 text-white shadow-lg'
-                  : 'bg-slate-800/80 border-slate-700 text-slate-400'
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                  : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
               }`}
             >
               <Banknote className="w-4 h-4" />
-              <span className="font-bold text-xs">Cash (AUD)</span>
+              <span className="font-bold text-xs">Cash Tender</span>
             </button>
           </div>
 
-          {/* View Content */}
-          {paymentTab === 'card' && (
-            <div className="space-y-4 text-center">
-              <div className="p-6 bg-slate-950 rounded-2xl border border-slate-800 space-y-3">
-                <span className="text-xs text-slate-400 block">
-                  Tap to launch simulated Tyro/Smartpay EFTPOS terminal with card scheme surcharges
-                </span>
-                <button
-                  onClick={() => {
-                    sounds.playTap();
-                    setIsEftposTerminalOpen(true);
-                  }}
-                  className="w-full bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white py-4 rounded-2xl font-black text-sm shadow-xl shadow-sky-950/60 transition active:scale-98 flex items-center justify-center space-x-2"
-                >
-                  <CreditCard className="w-5 h-5" />
-                  <span>Launch EFTPOS Terminal ({formatAud(activeBaseAmount + activeTipAmount)})</span>
-                </button>
+          {/* Active Payment Content */}
+          {paymentTab === 'card' ? (
+            <div className="space-y-3">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
+                <div className="flex justify-between text-slate-600">
+                  <span>Base Charge:</span>
+                  <span className="font-mono font-bold text-slate-900">{formatAud(activeBaseAmount)}</span>
+                </div>
+                {activeTipAmount > 0 && (
+                  <div className="flex justify-between text-slate-600">
+                    <span>Tip:</span>
+                    <span className="font-mono font-bold text-slate-900">+{formatAud(activeTipAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-slate-500 text-[11px] pt-1 border-t border-slate-200">
+                  <span>EFTPOS Scheme Surcharge:</span>
+                  <span>+{activeVenue.surcharges.cardSurchargeEftpos}%</span>
+                </div>
               </div>
-            </div>
-          )}
 
-          {paymentTab === 'cash' && (
+              <button
+                onClick={() => {
+                  sounds.playTap();
+                  setIsEftposTerminalOpen(true);
+                }}
+                className="w-full bg-[#10b981] hover:bg-[#059669] text-white py-3 rounded-xl font-bold text-sm shadow-xs transition flex items-center justify-center space-x-2"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Launch EFTPOS Terminal</span>
+              </button>
+            </div>
+          ) : (
             <CashPaymentView
               payableAmount={activeBaseAmount + activeTipAmount}
               onSettleCash={handleCashSettled}
@@ -224,7 +233,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         </div>
       </div>
 
-      {/* EFTPOS Terminal Simulation Popup */}
+      {/* EFTPOS Terminal Modal */}
       {isEftposTerminalOpen && (
         <EftposTerminalModal
           isOpen={isEftposTerminalOpen}
@@ -236,6 +245,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           onSuccess={handleEftposSuccess}
         />
       )}
+
     </>
   );
 };
