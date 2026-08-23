@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type {
+  FloorLandmark,
   FloorSection,
   MenuCategory,
   MenuItem,
@@ -12,7 +13,7 @@ import type {
 } from '../types';
 
 import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS } from '../data/initialMenu';
-import { INITIAL_SECTIONS, INITIAL_TABLES } from '../data/initialTables';
+import { INITIAL_LANDMARKS, INITIAL_SECTIONS, INITIAL_TABLES } from '../data/initialTables';
 import { INITIAL_ORDERS, INITIAL_SHIFT } from '../data/initialOrders';
 import { useVenue } from './VenueContext';
 import { useAuth } from './AuthContext';
@@ -22,22 +23,36 @@ import { sounds } from '../utils/sound';
 
 interface PosContextType {
   // Navigation & View Mode
-  activeMode: 'tables' | 'pos' | 'kds' | 'reports' | 'menu-editor' | 'venue-settings';
-  setActiveMode: (mode: 'tables' | 'pos' | 'kds' | 'reports' | 'menu-editor' | 'venue-settings') => void;
+  activeMode: 'tables' | 'pos' | 'kds' | 'reports' | 'admin';
+  setActiveMode: (mode: 'tables' | 'pos' | 'kds' | 'reports' | 'admin') => void;
 
-  // Floor Tables & Sections
+  // Floor Tables, Sections & Landmarks (Admin Customization)
   sections: FloorSection[];
   tables: RestaurantTable[];
+  landmarks: FloorLandmark[];
   activeTable: RestaurantTable | null;
   setActiveTable: (table: RestaurantTable | null) => void;
   updateTableStatus: (tableId: string, status: TableStatus) => void;
   transferTable: (fromTableId: string, toTableId: string) => void;
+  addTable: (table: RestaurantTable) => void;
+  updateTable: (table: RestaurantTable) => void;
+  deleteTable: (tableId: string) => void;
+  moveTablePosition: (tableId: string, x: number, y: number) => void;
+  addSection: (section: FloorSection) => void;
+  updateSection: (section: FloorSection) => void;
+  deleteSection: (sectionId: string) => void;
+  addLandmark: (landmark: FloorLandmark) => void;
+  updateLandmark: (landmark: FloorLandmark) => void;
+  deleteLandmark: (landmarkId: string) => void;
 
-  // Menu Catalog
+  // Menu & Categories Catalog (Admin Customization)
   categories: MenuCategory[];
   menuItems: MenuItem[];
   selectedCategory: string | null;
   setSelectedCategory: (catId: string | null) => void;
+  addCategory: (cat: MenuCategory) => void;
+  updateCategory: (cat: MenuCategory) => void;
+  deleteCategory: (catId: string) => void;
   addMenuItem: (item: MenuItem) => void;
   updateMenuItem: (item: MenuItem) => void;
   deleteMenuItem: (itemId: string) => void;
@@ -90,9 +105,10 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { activeVenue } = useVenue();
   const { currentStaff } = useAuth();
 
-  const [activeMode, setActiveMode] = useState<'tables' | 'pos' | 'kds' | 'reports' | 'menu-editor' | 'venue-settings'>(
+  const [activeMode, setActiveMode] = useState<'tables' | 'pos' | 'kds' | 'reports' | 'admin'>(
     activeVenue.serviceType === 'cafe' ? 'pos' : 'tables'
   );
+
 
   // Theme & Mode states (persisted)
   const [uiTheme, setUiTheme] = useState<'dark' | 'light'>(() => {
@@ -129,15 +145,65 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [activeVenue.id, activeVenue.serviceType]);
 
-  // Floor Tables & Sections
-  const [sections] = useState<FloorSection[]>(INITIAL_SECTIONS);
-  const [tables, setTables] = useState<RestaurantTable[]>(INITIAL_TABLES);
+  // Persistence keys
+  const SECTIONS_KEY = 'aus_pos_sections_v1';
+  const TABLES_KEY = 'aus_pos_tables_v1';
+  const LANDMARKS_KEY = 'aus_pos_landmarks_v1';
+  const CATEGORIES_KEY = 'aus_pos_categories_v1';
+  const MENU_KEY = 'aus_pos_menu_v1';
+
+  // Floor Tables, Sections & Landmarks State (with LocalStorage)
+  const [sections, setSections] = useState<FloorSection[]>(() => {
+    const saved = localStorage.getItem(SECTIONS_KEY);
+    return saved ? JSON.parse(saved) : INITIAL_SECTIONS;
+  });
+
+  const [tables, setTables] = useState<RestaurantTable[]>(() => {
+    const saved = localStorage.getItem(TABLES_KEY);
+    return saved ? JSON.parse(saved) : INITIAL_TABLES;
+  });
+
+  const [landmarks, setLandmarks] = useState<FloorLandmark[]>(() => {
+    const saved = localStorage.getItem(LANDMARKS_KEY);
+    return saved ? JSON.parse(saved) : INITIAL_LANDMARKS;
+  });
+
   const [activeTable, setActiveTable] = useState<RestaurantTable | null>(null);
 
-  // Menu
-  const [categories] = useState<MenuCategory[]>(INITIAL_CATEGORIES);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(INITIAL_MENU_ITEMS);
+  // Menu & Categories State (with LocalStorage)
+  const [categories, setCategories] = useState<MenuCategory[]>(() => {
+    const saved = localStorage.getItem(CATEGORIES_KEY);
+    return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+  });
+
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
+    const saved = localStorage.getItem(MENU_KEY);
+    return saved ? JSON.parse(saved) : INITIAL_MENU_ITEMS;
+  });
+
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Sync to LocalStorage
+  useEffect(() => {
+    localStorage.setItem(SECTIONS_KEY, JSON.stringify(sections));
+  }, [sections]);
+
+  useEffect(() => {
+    localStorage.setItem(TABLES_KEY, JSON.stringify(tables));
+  }, [tables]);
+
+  useEffect(() => {
+    localStorage.setItem(LANDMARKS_KEY, JSON.stringify(landmarks));
+  }, [landmarks]);
+
+  useEffect(() => {
+    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+  }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem(MENU_KEY, JSON.stringify(menuItems));
+  }, [menuItems]);
+
 
   // Orders State
   const [allOrders, setAllOrders] = useState<Order[]>(INITIAL_ORDERS);
@@ -625,6 +691,56 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return finalZReport;
   };
 
+  // Tables CRUD
+  const addTable = (table: RestaurantTable) => {
+    setTables(prev => [...prev, table]);
+  };
+  const updateTable = (table: RestaurantTable) => {
+    setTables(prev => prev.map(t => (t.id === table.id ? table : t)));
+  };
+  const deleteTable = (tableId: string) => {
+    setTables(prev => prev.filter(t => t.id !== tableId));
+  };
+  const moveTablePosition = (tableId: string, x: number, y: number) => {
+    setTables(prev => prev.map(t => (t.id === tableId ? { ...t, x, y } : t)));
+  };
+
+  // Sections CRUD
+  const addSection = (section: FloorSection) => {
+    setSections(prev => [...prev, section]);
+  };
+  const updateSection = (section: FloorSection) => {
+    setSections(prev => prev.map(s => (s.id === section.id ? section : s)));
+  };
+  const deleteSection = (sectionId: string) => {
+    setSections(prev => prev.filter(s => s.id !== sectionId));
+    // Also delete or reassign tables in this section
+    setTables(prev => prev.filter(t => t.sectionId !== sectionId));
+  };
+
+  // Landmarks CRUD
+  const addLandmark = (landmark: FloorLandmark) => {
+    setLandmarks(prev => [...prev, landmark]);
+  };
+  const updateLandmark = (landmark: FloorLandmark) => {
+    setLandmarks(prev => prev.map(l => (l.id === landmark.id ? landmark : l)));
+  };
+  const deleteLandmark = (landmarkId: string) => {
+    setLandmarks(prev => prev.filter(l => l.id !== landmarkId));
+  };
+
+  // Categories CRUD
+  const addCategory = (cat: MenuCategory) => {
+    setCategories(prev => [...prev, cat]);
+  };
+  const updateCategory = (cat: MenuCategory) => {
+    setCategories(prev => prev.map(c => (c.id === cat.id ? cat : c)));
+  };
+  const deleteCategory = (catId: string) => {
+    setCategories(prev => prev.filter(c => c.id !== catId));
+    setMenuItems(prev => prev.filter(i => i.categoryId !== catId));
+  };
+
   // Menu Management CRUD
   const addMenuItem = (item: MenuItem) => {
     setMenuItems(prev => [...prev, item]);
@@ -647,14 +763,28 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleSimpleMode,
         sections,
         tables,
+        landmarks,
         activeTable,
         setActiveTable,
         updateTableStatus,
         transferTable,
+        addTable,
+        updateTable,
+        deleteTable,
+        moveTablePosition,
+        addSection,
+        updateSection,
+        deleteSection,
+        addLandmark,
+        updateLandmark,
+        deleteLandmark,
         categories,
         menuItems,
         selectedCategory,
         setSelectedCategory,
+        addCategory,
+        updateCategory,
+        deleteCategory,
         addMenuItem,
         updateMenuItem,
         deleteMenuItem,
@@ -690,6 +820,7 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       {children}
     </PosContext.Provider>
   );
+
 
 };
 

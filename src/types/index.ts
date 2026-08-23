@@ -163,6 +163,8 @@ export interface FloorSection {
   id: string;
   venueId: string;
   name: string; // e.g. "Main Dining", "Terrace / Outdoor", "Bar Lounge", "Function Room"
+  color?: string;
+  order?: number;
 }
 
 export interface FloorLandmark {
@@ -170,7 +172,7 @@ export interface FloorLandmark {
   venueId: string;
   sectionId?: string; // Optional if venue-wide
   name: string; // e.g. "Main Entrance", "Kitchen Pass", "Bar Counter"
-  type: 'entrance' | 'kitchen' | 'bar' | 'restroom' | 'terrace_view' | 'stage' | 'host_stand';
+  type: 'entrance' | 'kitchen' | 'kitchen_pass' | 'bar' | 'restroom' | 'scenery' | 'terrace_view' | 'stage' | 'host_stand';
   x: number; // Percentage 0-100%
   y: number; // Percentage 0-100%
   width?: number;

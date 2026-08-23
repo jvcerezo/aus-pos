@@ -9,8 +9,7 @@ import { TableMapScreen } from './components/tables/TableMapScreen';
 import { PosScreen } from './components/pos/PosScreen';
 import { KdsScreen } from './components/kds/KdsScreen';
 import { EodReportsScreen } from './components/reports/EodReportsScreen';
-import { VenueSettingsModal } from './components/venue-manager/VenueSettingsModal';
-import { MenuEditorModal } from './components/venue-manager/MenuEditorModal';
+import { AdminPortalScreen } from './components/admin/AdminPortalScreen';
 
 const PosAppContent: React.FC = () => {
   const { activeMode } = usePos();
@@ -28,8 +27,7 @@ const PosAppContent: React.FC = () => {
         {activeMode === 'pos' && <PosScreen />}
         {activeMode === 'kds' && <KdsScreen />}
         {activeMode === 'reports' && <EodReportsScreen />}
-        {activeMode === 'menu-editor' && <MenuEditorModal />}
-        {activeMode === 'venue-settings' && <VenueSettingsModal />}
+        {activeMode === 'admin' && <AdminPortalScreen />}
       </main>
 
       {/* Bottom Status & Telemetry Bar */}

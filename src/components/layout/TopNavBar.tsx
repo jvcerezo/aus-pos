@@ -4,14 +4,11 @@ import {
   LayoutGrid,
   ChefHat,
   BarChart3,
-  Settings,
-  Lock,
   Clock,
   Coffee,
   ChevronDown,
-  FileText,
-  Sliders,
-  Calendar
+  Calendar,
+  Sliders
 } from 'lucide-react';
 import { useVenue } from '../../context/VenueContext';
 import { useAuth } from '../../context/AuthContext';
@@ -30,7 +27,6 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
 
   const [currentTime, setCurrentTime] = useState<string>(formatAusTime(new Date()));
   const [isVenueDropdownOpen, setIsVenueDropdownOpen] = useState(false);
-  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -49,10 +45,7 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
       <div className="flex items-center space-x-2">
         <div className="relative">
           <button
-            onClick={() => {
-              setIsVenueDropdownOpen(!isVenueDropdownOpen);
-              setIsAdminMenuOpen(false);
-            }}
+            onClick={() => setIsVenueDropdownOpen(!isVenueDropdownOpen)}
             className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200/80 px-3 py-1.5 rounded-lg border border-slate-200 transition"
           >
             <div
@@ -106,12 +99,12 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
         </div>
       </div>
 
-      {/* Center: Clean Segmented POS Tabs */}
+      {/* Center: Primary Navigation Tabs */}
       <nav className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
         {activeVenue.serviceType !== 'cafe' && (
           <button
             onClick={() => setActiveMode('tables')}
-            className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition ${
+            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
               activeMode === 'tables'
                 ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900'
@@ -124,7 +117,7 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
 
         <button
           onClick={() => setActiveMode('pos')}
-          className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition ${
+          className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
             activeMode === 'pos'
               ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
               : 'text-slate-600 hover:text-slate-900'
@@ -142,7 +135,7 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
         {activeVenue.enableKds && (
           <button
             onClick={() => setActiveMode('kds')}
-            className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition ${
+            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
               activeMode === 'kds'
                 ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900'
@@ -152,9 +145,33 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
             <span>Kitchen (KDS)</span>
           </button>
         )}
+
+        <button
+          onClick={() => setActiveMode('reports')}
+          className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
+            activeMode === 'reports'
+              ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+          <span>Z-Report</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMode('admin')}
+          className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
+            activeMode === 'admin'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-700 hover:text-slate-900'
+          }`}
+        >
+          <Sliders className="w-3.5 h-3.5" />
+          <span>Admin Portal</span>
+        </button>
       </nav>
 
-      {/* Right: Surcharges, Admin Menu & Staff */}
+      {/* Right: Surcharges & Staff */}
       <div className="flex items-center space-x-2">
         {/* Weekend Surcharge Button */}
         <button
@@ -174,78 +191,6 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
         <div className="hidden md:flex items-center space-x-1 text-xs font-mono text-slate-700 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200">
           <Clock className="w-3 h-3 text-slate-500" />
           <span>{currentTime}</span>
-        </div>
-
-        {/* Admin Tools Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setIsAdminMenuOpen(!isAdminMenuOpen);
-              setIsVenueDropdownOpen(false);
-            }}
-            className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg border text-xs font-bold transition ${
-              isAdminMenuOpen || activeMode === 'reports' || activeMode === 'menu-editor' || activeMode === 'venue-settings'
-                ? 'bg-slate-900 text-white border-slate-900'
-                : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Admin</span>
-            <ChevronDown className="w-3 h-3 text-slate-500" />
-          </button>
-
-          {isAdminMenuOpen && (
-            <>
-              <div className="fixed inset-0 z-30" onClick={() => setIsAdminMenuOpen(false)} />
-              <div className="absolute top-full right-0 mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-xl p-1 z-40 space-y-0.5 text-xs text-slate-800">
-                <button
-                  onClick={() => {
-                    setActiveMode('reports');
-                    setIsAdminMenuOpen(false);
-                  }}
-                  className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-100 text-left font-medium"
-                >
-                  <BarChart3 className="w-4 h-4 text-emerald-600" />
-                  <span>Z-Report & Cash-Up</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveMode('menu-editor');
-                    setIsAdminMenuOpen(false);
-                  }}
-                  className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-100 text-left font-medium"
-                >
-                  <FileText className="w-4 h-4 text-sky-600" />
-                  <span>Menu & Prices (Inc GST)</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveMode('venue-settings');
-                    setIsAdminMenuOpen(false);
-                  }}
-                  className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-100 text-left font-medium"
-                >
-                  <Settings className="w-4 h-4 text-amber-600" />
-                  <span>Venue Profile & ABN</span>
-                </button>
-
-                <div className="pt-1 border-t border-slate-100">
-                  <button
-                    onClick={() => {
-                      onOpenPinModal();
-                      setIsAdminMenuOpen(false);
-                    }}
-                    className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-rose-50 text-rose-600 text-left font-bold"
-                  >
-                    <Lock className="w-4 h-4" />
-                    <span>Lock / Switch Staff</span>
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
         </div>
 
         {/* Staff PIN Button */}
