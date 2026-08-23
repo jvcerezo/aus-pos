@@ -22,6 +22,8 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
     activeMode,
     setActiveMode,
     currentOrder,
+    allOrders,
+    tables,
     toggleWeekendSurcharge,
   } = usePos();
 
@@ -38,6 +40,13 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
   const isWeekendActive = currentOrder
     ? currentOrder.appliedWeekendSurcharge
     : activeVenue.surcharges.weekendEnabled;
+
+  // Compute live badges
+  const occupiedTablesCount = tables.filter(t => t.venueId === activeVenue.id && t.status !== 'available').length;
+  const openOrdersCount = allOrders.filter(o => o.venueId === activeVenue.id && !o.isPaid).length;
+  const kdsOrdersCount = allOrders.filter(
+    o => o.venueId === activeVenue.id && !o.isPaid && o.items.some(i => i.itemStatus !== 'ready' && i.itemStatus !== 'served')
+  ).length;
 
   return (
     <header className="h-14 bg-white text-slate-900 px-3.5 flex items-center justify-between select-none border-b border-slate-200 z-30 shadow-xs">
@@ -112,6 +121,11 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
           >
             <LayoutGrid className="w-3.5 h-3.5" />
             <span>Floor Tables</span>
+            {occupiedTablesCount > 0 && (
+              <span className="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold">
+                {occupiedTablesCount}
+              </span>
+            )}
           </button>
         )}
 
@@ -125,9 +139,9 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
         >
           {activeVenue.serviceType === 'cafe' ? <Coffee className="w-3.5 h-3.5" /> : <Utensils className="w-3.5 h-3.5" />}
           <span>Register</span>
-          {currentOrder && currentOrder.items.length > 0 && (
-            <span className="bg-slate-900 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
-              {currentOrder.items.reduce((s, i) => s + i.quantity, 0)}
+          {openOrdersCount > 0 && (
+            <span className="bg-slate-900 text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold">
+              {openOrdersCount}
             </span>
           )}
         </button>
@@ -143,6 +157,11 @@ export const TopNavBar: React.FC<{ onOpenPinModal: () => void }> = ({ onOpenPinM
           >
             <ChefHat className="w-3.5 h-3.5" />
             <span>Kitchen (KDS)</span>
+            {kdsOrdersCount > 0 && (
+              <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold">
+                {kdsOrdersCount}
+              </span>
+            )}
           </button>
         )}
 

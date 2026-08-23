@@ -5,7 +5,6 @@ import { PaymentModal } from '../payments/PaymentModal';
 import { ReceiptModal } from '../payments/ReceiptModal';
 import { usePos } from '../../context/PosContext';
 
-
 export const PosScreen: React.FC = () => {
   const { lastCompletedOrder, setLastCompletedOrder } = usePos();
   const [paymentModalData, setPaymentModalData] = useState<{
@@ -25,8 +24,8 @@ export const PosScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row h-[calc(100vh-6.25rem)] bg-slate-950 overflow-hidden">
-      {/* Left: Menu & Categories */}
+    <div className="flex-1 flex flex-col lg:flex-row h-[calc(100vh-5.25rem)] bg-slate-100 overflow-hidden">
+      {/* Left: Active Tickets Switcher & Menu Product Grid */}
       <ProductGrid />
 
       {/* Right: Order Cart & Bill Totals */}
