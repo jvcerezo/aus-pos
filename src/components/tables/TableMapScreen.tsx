@@ -34,6 +34,32 @@ export const TableMapScreen: React.FC = () => {
   const [viewMode, setViewMode] = useState<'blueprint' | 'grid'>('blueprint');
   const [transferSourceTable, setTransferSourceTable] = useState<RestaurantTable | null>(null);
 
+  // Helper to resolve floor for any table (even legacy cached tables)
+  const getFloorIdForTable = (table: RestaurantTable): string => {
+    if (table.floorLevelId) return table.floorLevelId;
+    const sec = sections.find(s => s.id === table.sectionId);
+    if (sec?.floorLevelId) return sec.floorLevelId;
+    if (table.sectionId?.includes('terrace') || table.sectionId?.includes('rooftop') || table.name.startsWith('Deck')) {
+      return venueFloors.find(f => f.shortCode === 'L2')?.id || venueFloors[0]?.id || '';
+    }
+    if (table.sectionId?.includes('mezz') || table.sectionId?.includes('function') || table.name.startsWith('Mezz') || table.name.startsWith('Private') || table.name.startsWith('Loft')) {
+      return venueFloors.find(f => f.shortCode === 'L1')?.id || venueFloors[0]?.id || '';
+    }
+    return venueFloors[0]?.id || '';
+  };
+
+  // Helper to resolve floor for landmark
+  const getFloorIdForLandmark = (lm: any): string => {
+    if (lm.floorLevelId) return lm.floorLevelId;
+    if (lm.id?.includes('ocean') || lm.id?.includes('skybar')) {
+      return venueFloors.find(f => f.shortCode === 'L2')?.id || venueFloors[0]?.id || '';
+    }
+    if (lm.id?.includes('l1') || lm.id?.includes('wine') || lm.id?.includes('loft')) {
+      return venueFloors.find(f => f.shortCode === 'L1')?.id || venueFloors[0]?.id || '';
+    }
+    return venueFloors[0]?.id || '';
+  };
+
   // Filter sections for active venue and active floor
   const venueSections = sections.filter(s => {
     if (s.venueId !== activeVenue.id) return false;
@@ -47,7 +73,7 @@ export const TableMapScreen: React.FC = () => {
   const filteredTables = venueTables.filter(t => {
     // Check floor
     if (selectedFloorId !== 'all') {
-      const tableFloorId = t.floorLevelId || sections.find(s => s.id === t.sectionId)?.floorLevelId;
+      const tableFloorId = getFloorIdForTable(t);
       if (tableFloorId && tableFloorId !== selectedFloorId) return false;
     }
     // Check section
@@ -91,9 +117,7 @@ export const TableMapScreen: React.FC = () => {
             </button>
 
             {venueFloors.map(floor => {
-              const floorTables = venueTables.filter(
-                t => (t.floorLevelId || sections.find(s => s.id === t.sectionId)?.floorLevelId) === floor.id
-              );
+              const floorTables = venueTables.filter(t => getFloorIdForTable(t) === floor.id);
               const occupied = floorTables.filter(t => t.status !== 'available').length;
               const isSelected = selectedFloorId === floor.id;
 
@@ -248,11 +272,9 @@ export const TableMapScreen: React.FC = () => {
             /* ALL LEVELS SELECTED: Stacked Multi-Story Architectural Building View (Zero overlap!) */
             <div className="w-full max-w-5xl space-y-6 pb-8">
               {venueFloors.map(floor => {
-                const floorTables = venueTables.filter(
-                  t => (t.floorLevelId || sections.find(s => s.id === t.sectionId)?.floorLevelId) === floor.id
-                );
+                const floorTables = venueTables.filter(t => getFloorIdForTable(t) === floor.id);
                 const floorLandmarks = landmarks.filter(
-                  l => l.venueId === activeVenue.id && l.floorLevelId === floor.id
+                  l => l.venueId === activeVenue.id && getFloorIdForLandmark(l) === floor.id
                 );
                 const occupiedCount = floorTables.filter(t => t.status !== 'available').length;
 
@@ -359,7 +381,7 @@ export const TableMapScreen: React.FC = () => {
 
                 {/* Architectural Landmarks */}
                 {landmarks
-                  .filter(l => l.venueId === activeVenue.id && (selectedFloorId === 'all' || l.floorLevelId === selectedFloorId))
+                  .filter(l => l.venueId === activeVenue.id && (selectedFloorId === 'all' || getFloorIdForLandmark(l) === selectedFloorId))
                   .map(lm => (
                     <div
                       key={lm.id}
@@ -397,9 +419,7 @@ export const TableMapScreen: React.FC = () => {
           /* Touch Grid View (Grouped by Floor Level when All is selected) */
           <div className="w-full max-w-6xl h-full overflow-y-auto space-y-6 pb-8">
             {(selectedFloorId === 'all' ? venueFloors : venueFloors.filter(f => f.id === selectedFloorId)).map(floor => {
-              const floorTables = filteredTables.filter(
-                t => (t.floorLevelId || sections.find(s => s.id === t.sectionId)?.floorLevelId) === floor.id
-              );
+              const floorTables = filteredTables.filter(t => getFloorIdForTable(t) === floor.id);
 
               if (floorTables.length === 0) return null;
 

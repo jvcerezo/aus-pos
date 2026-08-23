@@ -151,12 +151,12 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [activeVenue.id, activeVenue.serviceType]);
 
   // Persistence keys
-  const FLOORS_KEY = 'aus_pos_floors_v1';
-  const SECTIONS_KEY = 'aus_pos_sections_v1';
-  const TABLES_KEY = 'aus_pos_tables_v1';
-  const LANDMARKS_KEY = 'aus_pos_landmarks_v1';
-  const CATEGORIES_KEY = 'aus_pos_categories_v1';
-  const MENU_KEY = 'aus_pos_menu_v1';
+  const FLOORS_KEY = 'aus_pos_floors_v2';
+  const SECTIONS_KEY = 'aus_pos_sections_v2';
+  const TABLES_KEY = 'aus_pos_tables_v2';
+  const LANDMARKS_KEY = 'aus_pos_landmarks_v2';
+  const CATEGORIES_KEY = 'aus_pos_categories_v2';
+  const MENU_KEY = 'aus_pos_menu_v2';
 
   // Floor Levels, Tables, Sections & Landmarks State (with LocalStorage)
   const [floors, setFloors] = useState<FloorLevel[]>(() => {
@@ -166,17 +166,40 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [sections, setSections] = useState<FloorSection[]>(() => {
     const saved = localStorage.getItem(SECTIONS_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_SECTIONS;
+    if (!saved) return INITIAL_SECTIONS;
+    const parsed: FloorSection[] = JSON.parse(saved);
+    // Ensure all sections have floorLevelId
+    return parsed.map(s => {
+      if (s.floorLevelId) return s;
+      const match = INITIAL_SECTIONS.find(is => is.id === s.id);
+      return { ...s, floorLevelId: match?.floorLevelId || 'floor_bondi_gf' };
+    });
   });
 
   const [tables, setTables] = useState<RestaurantTable[]>(() => {
     const saved = localStorage.getItem(TABLES_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_TABLES;
+    if (!saved) return INITIAL_TABLES;
+    const parsed: RestaurantTable[] = JSON.parse(saved);
+    // If user has old tables, merge with any missing multi-floor initial tables
+    const missingInitial = INITIAL_TABLES.filter(it => !parsed.some(p => p.id === it.id));
+    const merged = [...parsed, ...missingInitial];
+    return merged.map(t => {
+      if (t.floorLevelId) return t;
+      const match = INITIAL_TABLES.find(it => it.id === t.id);
+      return { ...t, floorLevelId: match?.floorLevelId || 'floor_bondi_gf' };
+    });
   });
 
   const [landmarks, setLandmarks] = useState<FloorLandmark[]>(() => {
     const saved = localStorage.getItem(LANDMARKS_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_LANDMARKS;
+    if (!saved) return INITIAL_LANDMARKS;
+    const parsed: FloorLandmark[] = JSON.parse(saved);
+    const missing = INITIAL_LANDMARKS.filter(il => !parsed.some(p => p.id === il.id));
+    return [...parsed, ...missing].map(l => {
+      if (l.floorLevelId) return l;
+      const match = INITIAL_LANDMARKS.find(il => il.id === l.id);
+      return { ...l, floorLevelId: match?.floorLevelId || 'floor_bondi_gf' };
+    });
   });
 
   const [activeTable, setActiveTable] = useState<RestaurantTable | null>(null);
