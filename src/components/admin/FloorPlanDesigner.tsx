@@ -31,7 +31,7 @@ export const FloorPlanDesigner: React.FC = () => {
   } = usePos();
 
   const venueFloors = floors.filter(f => f.venueId === activeVenue.id).sort((a, b) => a.order - b.order);
-  const [activeFloorId, setActiveFloorId] = useState<string>('all');
+  const [activeFloorId, setActiveFloorId] = useState<string>(() => venueFloors[0]?.id || 'all');
   const [activeSectionId, setActiveSectionId] = useState<string>('all');
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 

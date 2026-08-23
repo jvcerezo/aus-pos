@@ -4,7 +4,8 @@ import {
   Map,
   LayoutGrid,
   Building,
-  Layers
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 import { useVenue } from '../../context/VenueContext';
 import { usePos } from '../../context/PosContext';
@@ -33,7 +34,7 @@ export const TableMapScreen: React.FC = () => {
   const [viewMode, setViewMode] = useState<'blueprint' | 'grid'>('blueprint');
   const [transferSourceTable, setTransferSourceTable] = useState<RestaurantTable | null>(null);
 
-  // Filter sections, landmarks, and tables for active venue
+  // Filter sections for active venue and active floor
   const venueSections = sections.filter(s => {
     if (s.venueId !== activeVenue.id) return false;
     if (selectedFloorId !== 'all' && s.floorLevelId && s.floorLevelId !== selectedFloorId) return false;
@@ -56,13 +57,6 @@ export const TableMapScreen: React.FC = () => {
     return true;
   });
 
-  // Filter landmarks by floor
-  const filteredLandmarks = landmarks.filter(l => {
-    if (l.venueId !== activeVenue.id) return false;
-    if (selectedFloorId !== 'all' && l.floorLevelId && l.floorLevelId !== selectedFloorId) return false;
-    return true;
-  });
-
   const handleTableNodeClick = (table: RestaurantTable) => {
     sounds.playTap();
     openTableOrder(table);
@@ -72,7 +66,7 @@ export const TableMapScreen: React.FC = () => {
     <div className="flex-1 flex flex-col h-[calc(100vh-5.75rem)] bg-slate-100 overflow-hidden select-none">
       {/* 1. Multi-Floor Level Switcher (Elevator Bar) */}
       {venueFloors.length > 1 && (
-        <div className="bg-slate-900 text-white px-4 py-2 flex items-center justify-between shadow-xs z-10">
+        <div className="bg-slate-900 text-white px-4 py-2 flex items-center justify-between shadow-xs z-10 shrink-0">
           <div className="flex items-center space-x-2">
             <Building className="w-4 h-4 text-slate-400" />
             <span className="text-xs font-black uppercase tracking-wider text-slate-300">
@@ -150,7 +144,7 @@ export const TableMapScreen: React.FC = () => {
       )}
 
       {/* 2. Sub-Sections & View Switcher Bar */}
-      <div className="p-3 bg-white border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+      <div className="p-3 bg-white border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs shrink-0">
         {/* Section Tabs */}
         <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5">
           <button
@@ -247,113 +241,234 @@ export const TableMapScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Floor Canvas */}
-      <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
+      {/* 3. Main Floor Display Area */}
+      <div className="flex-1 overflow-auto p-4 flex justify-center">
         {viewMode === 'blueprint' ? (
-          /* 2D Architectural Floor Plan */
-          <div className="w-[1020px] h-[680px] bg-white rounded-3xl border-2 border-slate-300 relative shadow-md overflow-hidden shrink-0">
-            {/* Subtle Blueprint Grid Pattern */}
-            <div
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{
-                backgroundImage:
-                  'radial-gradient(#64748b 1px, transparent 1px), radial-gradient(#64748b 1px, #ffffff 1px)',
-                backgroundSize: '28px 28px',
-                backgroundPosition: '0 0, 14px 14px',
-              }}
-            />
-
-            {/* Architectural Landmarks */}
-            {filteredLandmarks.map(lm => (
-              <div
-                key={lm.id}
-                style={{
-                  left: `${lm.x}%`,
-                  top: `${lm.y}%`,
-                  width: `${lm.width || 120}px`,
-                  height: `${lm.height || 40}px`,
-                }}
-                className="absolute z-0 bg-slate-100 border border-slate-300 rounded-xl flex items-center justify-center text-xs font-black uppercase tracking-wider text-slate-600 shadow-xs select-none"
-              >
-                {lm.label}
-              </div>
-            ))}
-
-            {/* Interactive Physical Tables */}
-            {filteredTables.map(table => {
-              const activeOrder = allOrders.find(o => o.tableId === table.id && !o.isPaid);
-              const orderTotals = activeOrder ? calculateOrderTotals(activeOrder, activeVenue) : null;
-
-              return (
-                <RealTableNode
-                  key={table.id}
-                  table={table}
-                  activeOrder={activeOrder}
-                  orderTotals={orderTotals}
-                  onClick={() => handleTableNodeClick(table)}
-                />
-              );
-            })}
-          </div>
-        ) : (
-          /* Grid View */
-          <div className="w-full max-w-6xl h-full overflow-y-auto">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-              {filteredTables.map(table => {
-                const activeOrder = allOrders.find(o => o.tableId === table.id && !o.isPaid);
-                const orderTotals = activeOrder ? calculateOrderTotals(activeOrder, activeVenue) : null;
-                const section = sections.find(s => s.id === table.sectionId);
-                const floor = floors.find(f => f.id === (table.floorLevelId || section?.floorLevelId));
+          selectedFloorId === 'all' && venueFloors.length > 1 ? (
+            /* ALL LEVELS SELECTED: Stacked Multi-Story Architectural Building View (Zero overlap!) */
+            <div className="w-full max-w-5xl space-y-6 pb-8">
+              {venueFloors.map(floor => {
+                const floorTables = venueTables.filter(
+                  t => (t.floorLevelId || sections.find(s => s.id === t.sectionId)?.floorLevelId) === floor.id
+                );
+                const floorLandmarks = landmarks.filter(
+                  l => l.venueId === activeVenue.id && l.floorLevelId === floor.id
+                );
+                const occupiedCount = floorTables.filter(t => t.status !== 'available').length;
 
                 return (
-                  <button
-                    key={table.id}
-                    onClick={() => handleTableNodeClick(table)}
-                    className={`p-4 rounded-2xl border-2 text-left transition transform active:scale-95 shadow-xs flex flex-col justify-between min-h-[125px] ${
-                      table.status === 'available'
-                        ? 'bg-white border-emerald-500 hover:border-emerald-600'
-                        : table.status === 'occupied'
-                        ? 'bg-sky-50 border-sky-600'
-                        : 'bg-amber-50 border-amber-600'
-                    }`}
+                  <div
+                    key={floor.id}
+                    className="bg-white rounded-3xl border border-slate-300 shadow-sm overflow-hidden"
                   >
-                    <div>
-                      <div className="flex items-start justify-between">
-                        <span className="font-black text-lg text-slate-900 font-mono">
-                          {table.name}
+                    {/* Floor Header Bar */}
+                    <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <span className="px-2 py-0.5 rounded bg-white/20 font-mono font-bold text-xs">
+                          {floor.shortCode}
                         </span>
-                        <span
-                          className={`text-xs font-bold px-2 py-0.5 rounded capitalize ${
-                            table.status === 'available'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : table.status === 'occupied'
-                              ? 'bg-sky-100 text-sky-900'
-                              : 'bg-amber-100 text-amber-900'
-                          }`}
-                        >
-                          {table.status}
-                        </span>
+                        <div>
+                          <h3 className="font-bold text-sm sm:text-base">{floor.name}</h3>
+                          {floor.description && (
+                            <p className="text-xs text-slate-400 font-normal">{floor.description}</p>
+                          )}
+                        </div>
                       </div>
 
-                      {floor && (
-                        <div className="text-[11px] font-bold text-slate-500 mt-0.5">
-                          {floor.shortCode} • {section?.name || 'Main'}
-                        </div>
-                      )}
+                      <div className="flex items-center space-x-3">
+                        <span className="font-mono text-xs bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
+                          {occupiedCount}/{floorTables.length} Occupied
+                        </span>
+
+                        <button
+                          onClick={() => {
+                            sounds.playTap();
+                            setSelectedFloorId(floor.id);
+                          }}
+                          className="flex items-center space-x-1 px-3 py-1 bg-white hover:bg-slate-100 text-slate-900 rounded-lg text-xs font-bold transition shadow-xs"
+                        >
+                          <span>Focus {floor.shortCode}</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
-                      <span>Capacity: {table.capacity}p</span>
-                      {orderTotals && (
-                        <span className="font-mono font-black text-sm text-slate-900">
-                          {formatAud(orderTotals.payableTotal)}
-                        </span>
-                      )}
+                    {/* Floor Level 2D Blueprint Canvas (Independent coordinates per floor) */}
+                    <div className="h-[480px] bg-slate-50 relative overflow-hidden select-none border-t border-slate-200">
+                      {/* Grid Pattern */}
+                      <div
+                        className="absolute inset-0 opacity-15 pointer-events-none"
+                        style={{
+                          backgroundImage:
+                            'radial-gradient(#64748b 1px, transparent 1px), radial-gradient(#64748b 1px, #ffffff 1px)',
+                          backgroundSize: '24px 24px',
+                          backgroundPosition: '0 0, 12px 12px',
+                        }}
+                      />
+
+                      {/* Landmarks on this level */}
+                      {floorLandmarks.map(lm => (
+                        <div
+                          key={lm.id}
+                          style={{
+                            left: `${lm.x}%`,
+                            top: `${lm.y}%`,
+                            width: `${lm.width || 120}px`,
+                            height: `${lm.height || 40}px`,
+                          }}
+                          className="absolute z-0 bg-slate-200/90 border border-slate-300 rounded-xl flex items-center justify-center text-xs font-black uppercase tracking-wider text-slate-600 shadow-2xs select-none"
+                        >
+                          {lm.label}
+                        </div>
+                      ))}
+
+                      {/* Tables on this level */}
+                      {floorTables.map(table => {
+                        const activeOrder = allOrders.find(o => o.tableId === table.id && !o.isPaid);
+                        const orderTotals = activeOrder ? calculateOrderTotals(activeOrder, activeVenue) : null;
+
+                        return (
+                          <RealTableNode
+                            key={table.id}
+                            table={table}
+                            activeOrder={activeOrder}
+                            orderTotals={orderTotals}
+                            onClick={() => handleTableNodeClick(table)}
+                          />
+                        );
+                      })}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
+          ) : (
+            /* SINGLE FLOOR FOCUSED: Full-Size 2D Architectural Floor Plan */
+            <div className="flex items-center justify-center h-full">
+              <div className="w-[1020px] h-[680px] bg-white rounded-3xl border-2 border-slate-300 relative shadow-md overflow-hidden shrink-0">
+                {/* Subtle Blueprint Grid Pattern */}
+                <div
+                  className="absolute inset-0 opacity-20 pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      'radial-gradient(#64748b 1px, transparent 1px), radial-gradient(#64748b 1px, #ffffff 1px)',
+                    backgroundSize: '28px 28px',
+                    backgroundPosition: '0 0, 14px 14px',
+                  }}
+                />
+
+                {/* Architectural Landmarks */}
+                {landmarks
+                  .filter(l => l.venueId === activeVenue.id && (selectedFloorId === 'all' || l.floorLevelId === selectedFloorId))
+                  .map(lm => (
+                    <div
+                      key={lm.id}
+                      style={{
+                        left: `${lm.x}%`,
+                        top: `${lm.y}%`,
+                        width: `${lm.width || 120}px`,
+                        height: `${lm.height || 40}px`,
+                      }}
+                      className="absolute z-0 bg-slate-100 border border-slate-300 rounded-xl flex items-center justify-center text-xs font-black uppercase tracking-wider text-slate-600 shadow-xs select-none"
+                    >
+                      {lm.label}
+                    </div>
+                  ))}
+
+                {/* Interactive Physical Tables */}
+                {filteredTables.map(table => {
+                  const activeOrder = allOrders.find(o => o.tableId === table.id && !o.isPaid);
+                  const orderTotals = activeOrder ? calculateOrderTotals(activeOrder, activeVenue) : null;
+
+                  return (
+                    <RealTableNode
+                      key={table.id}
+                      table={table}
+                      activeOrder={activeOrder}
+                      orderTotals={orderTotals}
+                      onClick={() => handleTableNodeClick(table)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )
+        ) : (
+          /* Touch Grid View (Grouped by Floor Level when All is selected) */
+          <div className="w-full max-w-6xl h-full overflow-y-auto space-y-6 pb-8">
+            {(selectedFloorId === 'all' ? venueFloors : venueFloors.filter(f => f.id === selectedFloorId)).map(floor => {
+              const floorTables = filteredTables.filter(
+                t => (t.floorLevelId || sections.find(s => s.id === t.sectionId)?.floorLevelId) === floor.id
+              );
+
+              if (floorTables.length === 0) return null;
+
+              return (
+                <div key={floor.id} className="space-y-3">
+                  <div className="flex items-center space-x-2 border-b border-slate-300 pb-1.5">
+                    <span className="px-2 py-0.5 rounded bg-slate-900 text-white font-mono font-bold text-xs">
+                      {floor.shortCode}
+                    </span>
+                    <h3 className="font-bold text-base text-slate-900">{floor.name}</h3>
+                    <span className="text-xs text-slate-500 font-mono">({floorTables.length} tables)</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+                    {floorTables.map(table => {
+                      const activeOrder = allOrders.find(o => o.tableId === table.id && !o.isPaid);
+                      const orderTotals = activeOrder ? calculateOrderTotals(activeOrder, activeVenue) : null;
+                      const section = sections.find(s => s.id === table.sectionId);
+
+                      return (
+                        <button
+                          key={table.id}
+                          onClick={() => handleTableNodeClick(table)}
+                          className={`p-4 rounded-2xl border-2 text-left transition transform active:scale-95 shadow-xs flex flex-col justify-between min-h-[125px] ${
+                            table.status === 'available'
+                              ? 'bg-white border-emerald-500 hover:border-emerald-600'
+                              : table.status === 'occupied'
+                              ? 'bg-sky-50 border-sky-600'
+                              : 'bg-amber-50 border-amber-600'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-start justify-between">
+                              <span className="font-black text-lg text-slate-900 font-mono">
+                                {table.name}
+                              </span>
+                              <span
+                                className={`text-xs font-bold px-2 py-0.5 rounded capitalize ${
+                                  table.status === 'available'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : table.status === 'occupied'
+                                    ? 'bg-sky-100 text-sky-900'
+                                    : 'bg-amber-100 text-amber-900'
+                                }`}
+                              >
+                                {table.status}
+                              </span>
+                            </div>
+
+                            <div className="text-[11px] font-bold text-slate-500 mt-0.5">
+                              {floor.shortCode} • {section?.name || 'Main'}
+                            </div>
+                          </div>
+
+                          <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
+                            <span>Capacity: {table.capacity}p</span>
+                            {orderTotals && (
+                              <span className="font-mono font-black text-sm text-slate-900">
+                                {formatAud(orderTotals.payableTotal)}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
