@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Percent, X, Check } from 'lucide-react';
-
+import { Percent, X } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
 import { formatAud } from '../../utils/formatters';
-import { sounds } from '../../utils/sound';
 
 export const DiscountModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
   isOpen,
@@ -25,7 +23,6 @@ export const DiscountModal: React.FC<{ isOpen: boolean; onClose: () => void }> =
   ];
 
   const handleApplyPreset = (preset: typeof quickPresets[0]) => {
-    sounds.playTap();
     applyOrderDiscount(preset.type, preset.val, preset.reason);
     onClose();
   };
@@ -38,42 +35,43 @@ export const DiscountModal: React.FC<{ isOpen: boolean; onClose: () => void }> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md p-6 shadow-2xl relative text-white">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+      <div className="bg-white border border-slate-300 rounded-2xl w-full max-w-md p-5 shadow-2xl relative text-slate-900">
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800 transition"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center space-x-3 mb-5">
-          <div className="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center border border-amber-500/30">
-            <Percent className="w-5 h-5" />
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-9 h-9 bg-slate-100 text-slate-800 rounded-xl flex items-center justify-center border border-slate-200">
+            <Percent className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-lg font-bold">Apply Order Discount</h2>
-            <p className="text-xs text-slate-400">Australian standard hospitality concession / promo</p>
+            <h2 className="text-base font-bold text-slate-900">Apply Order Discount</h2>
+            <p className="text-xs text-slate-500">Concession / Promo voucher</p>
           </div>
         </div>
 
         {/* Current Active Discount */}
         {currentOrder.discount && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 mb-4 flex items-center justify-between">
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-amber-400 block">{currentOrder.discount.reason}</span>
-              <span className="text-[11px] text-slate-300">
+              <div className="text-xs font-bold text-amber-900">
+                Active: {currentOrder.discount.reason} (
                 {currentOrder.discount.type === 'percent'
-                  ? `${currentOrder.discount.value}% off subtotal`
-                  : `-${formatAud(currentOrder.discount.value)} off`}
-              </span>
+                  ? `${currentOrder.discount.value}%`
+                  : formatAud(currentOrder.discount.value)}
+                )
+              </div>
             </div>
             <button
               onClick={() => {
                 removeOrderDiscount();
                 onClose();
               }}
-              className="text-xs text-rose-400 hover:text-rose-300 font-bold px-2 py-1 bg-rose-500/10 rounded-lg border border-rose-500/20"
+              className="text-xs font-bold text-rose-700 hover:underline"
             >
               Remove
             </button>
@@ -81,36 +79,37 @@ export const DiscountModal: React.FC<{ isOpen: boolean; onClose: () => void }> =
         )}
 
         {/* Quick Presets */}
-        <div className="space-y-2 mb-5">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quick Presets</label>
-          <div className="grid grid-cols-1 gap-2">
-            {quickPresets.map((preset, idx) => (
+        <div className="space-y-1.5 mb-4">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+            Quick Presets
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {quickPresets.map((p, idx) => (
               <button
                 key={idx}
-                onClick={() => handleApplyPreset(preset)}
-                className="w-full bg-slate-800/80 hover:bg-slate-700 p-2.5 rounded-xl border border-slate-700 text-left flex items-center justify-between text-xs font-semibold text-slate-200 transition"
+                onClick={() => handleApplyPreset(p)}
+                className="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-left text-xs font-bold text-slate-800 transition"
               >
-                <span>{preset.label}</span>
-                <span className="font-mono text-amber-400">
-                  {preset.type === 'percent' ? `${preset.val}%` : `-${formatAud(preset.val)}`}
-                </span>
+                {p.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Custom Discount Input */}
-        <div className="pt-4 border-t border-slate-800 space-y-3">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Custom Discount</label>
+        {/* Custom Discount Form */}
+        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+            Custom Amount
+          </span>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-1.5">
             <button
               type="button"
               onClick={() => setDiscountType('percent')}
-              className={`p-2 rounded-xl text-xs font-bold border transition ${
+              className={`py-1.5 rounded-lg text-xs font-bold border transition ${
                 discountType === 'percent'
-                  ? 'bg-sky-600 border-sky-500 text-white'
-                  : 'bg-slate-800 border-slate-700 text-slate-400'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-700 border-slate-200'
               }`}
             >
               Percentage (%)
@@ -118,49 +117,48 @@ export const DiscountModal: React.FC<{ isOpen: boolean; onClose: () => void }> =
             <button
               type="button"
               onClick={() => setDiscountType('fixed')}
-              className={`p-2 rounded-xl text-xs font-bold border transition ${
+              className={`py-1.5 rounded-lg text-xs font-bold border transition ${
                 discountType === 'fixed'
-                  ? 'bg-sky-600 border-sky-500 text-white'
-                  : 'bg-slate-800 border-slate-700 text-slate-400'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-700 border-slate-200'
               }`}
             >
-              Fixed Dollar ($ AUD)
+              Fixed Dollar ($)
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
-            <input
-              type="number"
-              min="1"
-              value={value}
-              onChange={e => setValue(e.target.value)}
-              placeholder="Value"
-              className="col-span-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-mono text-center focus:outline-none focus:border-sky-500"
-            />
-            <input
-              type="text"
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              placeholder="Reason for discount"
-              className="col-span-2 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
-            />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                {discountType === 'percent' ? 'Discount %' : 'Amount ($ AUD)'}
+              </label>
+              <input
+                type="number"
+                value={value}
+                onChange={e => setValue(e.target.value)}
+                className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 font-mono font-bold focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 block mb-1">Reason / Note</label>
+              <input
+                type="text"
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                placeholder="e.g. VIP Card"
+                className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center justify-end space-x-2 pt-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleCustomApply}
-              className="flex items-center space-x-1.5 bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-lg transition"
-            >
-              <Check className="w-4 h-4" />
-              <span>Apply Custom</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleCustomApply}
+            className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-xl text-xs font-bold shadow-xs transition"
+          >
+            Apply Discount
+          </button>
         </div>
       </div>
     </div>

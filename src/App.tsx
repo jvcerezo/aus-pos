@@ -13,24 +13,17 @@ import { VenueSettingsModal } from './components/venue-manager/VenueSettingsModa
 import { MenuEditorModal } from './components/venue-manager/MenuEditorModal';
 
 const PosAppContent: React.FC = () => {
-  const { activeMode, uiTheme } = usePos();
+  const { activeMode } = usePos();
   const { isLocked } = useAuth();
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
-  const isLight = uiTheme === 'light';
-
   return (
-    <div
-      className={`flex flex-col h-screen w-screen overflow-hidden font-sans select-none transition-colors ${
-        isLight ? 'bg-slate-50 text-slate-900' : 'bg-slate-950 text-slate-100'
-      }`}
-    >
-
-      {/* Top Bar */}
+    <div className="flex flex-col h-screen w-screen bg-slate-100 text-slate-900 overflow-hidden font-sans select-none">
+      {/* Top Navigation Bar */}
       <TopNavBar onOpenPinModal={() => setIsPinModalOpen(true)} />
 
-      {/* Main Mode View */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
+      {/* Main Screen Body */}
+      <main className="flex-1 flex flex-col overflow-hidden relative bg-slate-100">
         {activeMode === 'tables' && <TableMapScreen />}
         {activeMode === 'pos' && <PosScreen />}
         {activeMode === 'kds' && <KdsScreen />}
@@ -39,10 +32,10 @@ const PosAppContent: React.FC = () => {
         {activeMode === 'venue-settings' && <VenueSettingsModal />}
       </main>
 
-      {/* Bottom Status Bar */}
+      {/* Bottom Status & Telemetry Bar */}
       <BottomStatusBar />
 
-      {/* Staff PIN Lock / Switch Modal */}
+      {/* Staff PIN Lock Modal */}
       {(isPinModalOpen || isLocked) && (
         <StaffPinModal
           isOpen={isPinModalOpen || isLocked}
