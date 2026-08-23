@@ -5,18 +5,18 @@ export const INITIAL_FLOORS: FloorLevel[] = [
   {
     id: 'floor_bondi_gf',
     venueId: 'venue_bondi',
-    name: 'Ground Floor (Main)',
+    name: 'Ground Floor (Main & Bar)',
     shortCode: 'GF',
     order: 1,
-    description: 'Main dining room, cocktail bar & promenade entrance',
+    description: 'Main dining room, cocktail bar, booth seating & promenade entrance',
   },
   {
     id: 'floor_bondi_l1',
     venueId: 'venue_bondi',
-    name: 'Level 1 (Mezzanine & Lounge)',
+    name: 'Level 1 (Mezzanine & VIP Lounge)',
     shortCode: 'L1',
     order: 2,
-    description: 'Elevated dining, private function room & wine lounge',
+    description: 'Elevated mezzanine dining, private boardroom & temperature wine wall',
   },
   {
     id: 'floor_bondi_l2',
@@ -24,7 +24,7 @@ export const INITIAL_FLOORS: FloorLevel[] = [
     name: 'Level 2 (Rooftop Ocean Terrace)',
     shortCode: 'L2',
     order: 3,
-    description: 'Open-air panoramic ocean terrace & sunset deck',
+    description: 'Open-air panoramic ocean terrace, sunset cabanas & cocktail skybar',
   },
 
   // Melbourne Lane Cafe & Roastery
@@ -52,7 +52,7 @@ export const INITIAL_FLOORS: FloorLevel[] = [
     name: 'Ground Floor (Saloon & Hall)',
     shortCode: 'GF',
     order: 1,
-    description: 'Main saloon, beer taps & central dining',
+    description: 'Main saloon, 16 craft beer taps & central dining',
   },
   {
     id: 'floor_outback_deck',
@@ -69,9 +69,9 @@ export const INITIAL_SECTIONS: FloorSection[] = [
   { id: 'sec_bondi_main', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_gf', name: 'Main Dining Room', color: '#3b82f6' },
   { id: 'sec_bondi_bar', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_gf', name: 'Cocktail Bar & Lounge', color: '#8b5cf6' },
   { id: 'sec_bondi_mezz', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l1', name: 'Mezzanine VIP Dining', color: '#10b981' },
-  { id: 'sec_bondi_function', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l1', name: 'Private Function Room', color: '#ec4899' },
+  { id: 'sec_bondi_function', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l1', name: 'Private Boardroom', color: '#ec4899' },
   { id: 'sec_bondi_terrace', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l2', name: 'Ocean Terrace Deck', color: '#06b6d4' },
-  { id: 'sec_bondi_rooftop_bar', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l2', name: 'Sunset Sky Bar', color: '#f59e0b' },
+  { id: 'sec_bondi_rooftop_bar', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l2', name: 'Sunset Skybar & Cabanas', color: '#f59e0b' },
 
   // Melbourne Lane Cafe Sections
   { id: 'sec_melb_indoor', venueId: 'venue_melbourne', floorLevelId: 'floor_melb_gf', name: 'Espresso Bar & Bench', color: '#3b82f6' },
@@ -85,18 +85,20 @@ export const INITIAL_SECTIONS: FloorSection[] = [
 
 export const INITIAL_LANDMARKS: FloorLandmark[] = [
   // Bondi Ground Floor Landmarks
-  { id: 'lm_b_entry', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_gf', name: 'Main Entrance', type: 'entrance', x: 8, y: 92, label: '🚪 Hostess & Entrance' },
-  { id: 'lm_b_bar', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_gf', name: 'Cocktail Bar', type: 'bar', x: 20, y: 28, width: 140, height: 35, label: '🍸 Long Wooden Cocktail Bar' },
-  { id: 'lm_b_kitchen', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_gf', name: 'Kitchen Pass', type: 'kitchen', x: 88, y: 15, width: 100, height: 40, label: '🍳 Kitchen Pass / Expediter' },
+  { id: 'lm_b_entry', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_gf', name: 'Main Entrance', type: 'entrance', x: 8, y: 90, label: '🚪 Hostess & Entry' },
+  { id: 'lm_b_bar', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_gf', name: 'Cocktail Bar', type: 'bar', x: 20, y: 25, width: 140, height: 35, label: '🍸 Long Wooden Cocktail Bar' },
+  { id: 'lm_b_kitchen', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_gf', name: 'Kitchen Pass', type: 'kitchen', x: 86, y: 15, width: 110, height: 35, label: '🍳 Kitchen Pass / Expediter' },
   { id: 'lm_b_restroom', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_gf', name: 'Restrooms', type: 'restroom', x: 6, y: 15, label: '🚻 Restrooms' },
 
   // Bondi Level 1 Landmarks
-  { id: 'lm_b_l1_stairs', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l1', name: 'Stairs', type: 'entrance', x: 8, y: 90, label: '🪜 Spiral Stairs & Lift' },
-  { id: 'lm_b_l1_wine', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l1', name: 'Wine Cellar Wall', type: 'bar', x: 25, y: 25, width: 130, height: 35, label: '🍷 Temperature Wine Wall' },
+  { id: 'lm_b_l1_stairs', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l1', name: 'Stairs', type: 'entrance', x: 8, y: 88, label: '🪜 Spiral Stairs & Lift' },
+  { id: 'lm_b_l1_wine', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l1', name: 'Wine Cellar Wall', type: 'bar', x: 25, y: 22, width: 140, height: 35, label: '🍷 Temperature Wine Wall' },
+  { id: 'lm_b_l1_balcony', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l1', name: 'Balcony Rail', type: 'terrace_view', x: 88, y: 55, width: 25, height: 140, label: '🌿 Mezzanine Overlook' },
 
   // Bondi Level 2 Rooftop Landmarks
-  { id: 'lm_b_ocean', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l2', name: 'Ocean Balcony', type: 'terrace_view', x: 85, y: 50, width: 25, height: 160, label: '🌊 Panoramic Pacific Ocean View' },
-  { id: 'lm_b_skybar', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l2', name: 'Rooftop Bar', type: 'bar', x: 25, y: 30, width: 120, height: 35, label: '🍹 Sunset Cocktail Skybar' },
+  { id: 'lm_b_ocean', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l2', name: 'Ocean Balcony', type: 'terrace_view', x: 88, y: 50, width: 25, height: 160, label: '🌊 Panoramic Pacific Ocean View' },
+  { id: 'lm_b_skybar', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l2', name: 'Rooftop Bar', type: 'bar', x: 20, y: 25, width: 130, height: 35, label: '🍹 Sunset Cocktail Skybar' },
+  { id: 'lm_b_l2_lift', venueId: 'venue_bondi', floorLevelId: 'floor_bondi_l2', name: 'Rooftop Lift', type: 'entrance', x: 8, y: 88, label: '🛗 Rooftop Glass Lift' },
 
   // Melbourne Lane Landmarks
   { id: 'lm_m_entry', venueId: 'venue_melbourne', floorLevelId: 'floor_melb_gf', name: 'Flinders Entry', type: 'entrance', x: 10, y: 90, label: '🚪 Laneway Entry' },
@@ -111,9 +113,9 @@ export const INITIAL_LANDMARKS: FloorLandmark[] = [
 ];
 
 export const INITIAL_TABLES: RestaurantTable[] = [
-  // ----------------------------------------------------
-  // BONDI SUNSET BISTRO (NSW) - Ground Floor (GF)
-  // ----------------------------------------------------
+  // =========================================================================
+  // 🏢 BONDI SUNSET BISTRO - GROUND FLOOR (GF: Main Dining & Bar)
+  // =========================================================================
   {
     id: 't_b1',
     venueId: 'venue_bondi',
@@ -139,7 +141,7 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     activeOrderId: 'demo_order_1',
     currentCovers: 3,
     openedAt: new Date(Date.now() - 38 * 60000).toISOString(),
-    serverName: 'Chloe W',
+    serverName: 'Chloe Watson',
     x: 54,
     y: 42,
     zone: 'Center Floor',
@@ -169,7 +171,7 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     activeOrderId: 'demo_order_2',
     currentCovers: 4,
     openedAt: new Date(Date.now() - 75 * 60000).toISOString(),
-    serverName: 'Jack M',
+    serverName: 'Jack Murphy',
     x: 54,
     y: 68,
     zone: 'Family Dining',
@@ -197,7 +199,7 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     capacity: 4,
     status: 'available',
     x: 40,
-    y: 20,
+    y: 18,
     zone: 'Wall Booths',
   },
   {
@@ -208,13 +210,30 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     name: 'Booth 2',
     shape: 'booth',
     capacity: 4,
-    status: 'available',
-    x: 56,
-    y: 20,
+    status: 'occupied',
+    activeOrderId: 'demo_order_4',
+    currentCovers: 4,
+    openedAt: new Date(Date.now() - 25 * 60000).toISOString(),
+    serverName: 'Sarah Jenkins',
+    x: 58,
+    y: 18,
+    zone: 'Wall Booths',
+  },
+  {
+    id: 't_b_booth3',
+    venueId: 'venue_bondi',
+    floorLevelId: 'floor_bondi_gf',
+    sectionId: 'sec_bondi_main',
+    name: 'Booth 3',
+    shape: 'booth',
+    capacity: 4,
+    status: 'cleaning',
+    x: 74,
+    y: 18,
     zone: 'Wall Booths',
   },
 
-  // Ground Floor Bar Stools & High Tops
+  // Ground Floor Cocktail Bar Stools & High Tops
   {
     id: 't_bar1',
     venueId: 'venue_bondi',
@@ -224,8 +243,8 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     shape: 'bar_stool',
     capacity: 1,
     status: 'available',
-    x: 14,
-    y: 38,
+    x: 12,
+    y: 40,
     zone: 'Bar Counter',
   },
   {
@@ -236,9 +255,13 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     name: 'Bar 2',
     shape: 'bar_stool',
     capacity: 1,
-    status: 'available',
-    x: 18,
-    y: 38,
+    status: 'occupied',
+    activeOrderId: 'demo_order_5',
+    currentCovers: 1,
+    openedAt: new Date(Date.now() - 12 * 60000).toISOString(),
+    serverName: 'Jack Murphy',
+    x: 16,
+    y: 40,
     zone: 'Bar Counter',
   },
   {
@@ -250,8 +273,8 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     shape: 'bar_stool',
     capacity: 1,
     status: 'available',
-    x: 22,
-    y: 38,
+    x: 20,
+    y: 40,
     zone: 'Bar Counter',
   },
   {
@@ -263,8 +286,21 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     shape: 'bar_stool',
     capacity: 1,
     status: 'available',
-    x: 26,
-    y: 38,
+    x: 24,
+    y: 40,
+    zone: 'Bar Counter',
+  },
+  {
+    id: 't_bar5',
+    venueId: 'venue_bondi',
+    floorLevelId: 'floor_bondi_gf',
+    sectionId: 'sec_bondi_bar',
+    name: 'Bar 5',
+    shape: 'bar_stool',
+    capacity: 1,
+    status: 'available',
+    x: 28,
+    y: 40,
     zone: 'Bar Counter',
   },
   {
@@ -275,15 +311,32 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     name: 'High-Top A',
     shape: 'round',
     capacity: 2,
-    status: 'available',
+    status: 'occupied',
+    activeOrderId: 'demo_order_8',
+    currentCovers: 2,
+    openedAt: new Date(Date.now() - 20 * 60000).toISOString(),
+    serverName: 'Chloe Watson',
     x: 16,
-    y: 64,
+    y: 65,
+    zone: 'Lounge High-Tops',
+  },
+  {
+    id: 't_high_b',
+    venueId: 'venue_bondi',
+    floorLevelId: 'floor_bondi_gf',
+    sectionId: 'sec_bondi_bar',
+    name: 'High-Top B',
+    shape: 'round',
+    capacity: 2,
+    status: 'available',
+    x: 24,
+    y: 65,
     zone: 'Lounge High-Tops',
   },
 
-  // ----------------------------------------------------
-  // BONDI SUNSET BISTRO - Level 1 (L1 Mezzanine & VIP)
-  // ----------------------------------------------------
+  // =========================================================================
+  // 🏢 BONDI SUNSET BISTRO - LEVEL 1 (L1: Mezzanine & VIP Dining)
+  // =========================================================================
   {
     id: 't_l1_m1',
     venueId: 'venue_bondi',
@@ -294,7 +347,7 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     capacity: 4,
     status: 'available',
     x: 35,
-    y: 40,
+    y: 38,
     zone: 'Mezzanine Balcony',
   },
   {
@@ -305,9 +358,13 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     name: 'Mezz 2',
     shape: 'round',
     capacity: 4,
-    status: 'available',
+    status: 'occupied',
+    activeOrderId: 'demo_order_6',
+    currentCovers: 4,
+    openedAt: new Date(Date.now() - 42 * 60000).toISOString(),
+    serverName: 'Sarah Jenkins',
     x: 52,
-    y: 40,
+    y: 38,
     zone: 'Mezzanine Balcony',
   },
   {
@@ -320,26 +377,39 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     capacity: 4,
     status: 'available',
     x: 69,
-    y: 40,
+    y: 38,
     zone: 'Mezzanine Balcony',
+  },
+  {
+    id: 't_l1_m4',
+    venueId: 'venue_bondi',
+    floorLevelId: 'floor_bondi_l1',
+    sectionId: 'sec_bondi_mezz',
+    name: 'Mezz 4',
+    shape: 'square',
+    capacity: 2,
+    status: 'available',
+    x: 35,
+    y: 65,
+    zone: 'Mezzanine Center',
   },
   {
     id: 't_l1_private',
     venueId: 'venue_bondi',
     floorLevelId: 'floor_bondi_l1',
     sectionId: 'sec_bondi_function',
-    name: 'Private Boardroom',
+    name: 'Boardroom VIP',
     shape: 'rectangle',
     capacity: 12,
     status: 'reserved',
-    x: 52,
-    y: 72,
+    x: 60,
+    y: 68,
     zone: 'Private Dining',
   },
 
-  // ----------------------------------------------------
-  // BONDI SUNSET BISTRO - Level 2 (L2 Rooftop Ocean Deck)
-  // ----------------------------------------------------
+  // =========================================================================
+  // 🏢 BONDI SUNSET BISTRO - LEVEL 2 (L2: Rooftop Ocean Terrace & Sunset Deck)
+  // =========================================================================
   {
     id: 't_roof_1',
     venueId: 'venue_bondi',
@@ -349,8 +419,8 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     shape: 'round',
     capacity: 4,
     status: 'available',
-    x: 38,
-    y: 45,
+    x: 36,
+    y: 42,
     zone: 'Open Air Ocean Deck',
   },
   {
@@ -365,9 +435,9 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     activeOrderId: 'demo_order_3',
     currentCovers: 2,
     openedAt: new Date(Date.now() - 15 * 60000).toISOString(),
-    serverName: 'Chloe W',
-    x: 56,
-    y: 45,
+    serverName: 'Chloe Watson',
+    x: 54,
+    y: 42,
     zone: 'Open Air Ocean Deck',
   },
   {
@@ -379,27 +449,57 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     shape: 'round',
     capacity: 4,
     status: 'available',
-    x: 74,
-    y: 45,
+    x: 72,
+    y: 42,
     zone: 'Open Air Ocean Deck',
   },
   {
-    id: 't_roof_sunset',
+    id: 't_roof_4',
+    venueId: 'venue_bondi',
+    floorLevelId: 'floor_bondi_l2',
+    sectionId: 'sec_bondi_terrace',
+    name: 'Deck 4',
+    shape: 'square',
+    capacity: 2,
+    status: 'available',
+    x: 36,
+    y: 70,
+    zone: 'Terrace Walkway',
+  },
+  {
+    id: 't_roof_sunset1',
     venueId: 'venue_bondi',
     floorLevelId: 'floor_bondi_l2',
     sectionId: 'sec_bondi_rooftop_bar',
-    name: 'Sunset Cabana',
+    name: 'Sunset Cabana 1',
     shape: 'booth',
     capacity: 8,
-    status: 'available',
+    status: 'occupied',
+    activeOrderId: 'demo_order_7',
+    currentCovers: 6,
+    openedAt: new Date(Date.now() - 50 * 60000).toISOString(),
+    serverName: 'Jack Murphy',
     x: 56,
-    y: 75,
+    y: 72,
+    zone: 'VIP Sunset Lounge',
+  },
+  {
+    id: 't_roof_sunset2',
+    venueId: 'venue_bondi',
+    floorLevelId: 'floor_bondi_l2',
+    sectionId: 'sec_bondi_rooftop_bar',
+    name: 'Sunset Cabana 2',
+    shape: 'booth',
+    capacity: 8,
+    status: 'reserved',
+    x: 74,
+    y: 72,
     zone: 'VIP Sunset Lounge',
   },
 
-  // ----------------------------------------------------
-  // MELBOURNE LANE CAFE TABLES
-  // ----------------------------------------------------
+  // =========================================================================
+  // ☕ MELBOURNE LANE CAFE TABLES
+  // =========================================================================
   {
     id: 't_m1',
     venueId: 'venue_melbourne',
@@ -425,7 +525,7 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     activeOrderId: 'demo_order_melb_1',
     currentCovers: 2,
     openedAt: new Date(Date.now() - 10 * 60000).toISOString(),
-    serverName: 'Sarah J',
+    serverName: 'Sarah Jenkins',
     x: 60,
     y: 40,
     zone: 'Indoor Bench',
@@ -470,9 +570,9 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     zone: 'Cupping Loft',
   },
 
-  // ----------------------------------------------------
-  // OUTBACK SMOKEHOUSE TABLES
-  // ----------------------------------------------------
+  // =========================================================================
+  // 🍖 OUTBACK SMOKEHOUSE TABLES
+  // =========================================================================
   {
     id: 't_o_b1',
     venueId: 'venue_outback',
@@ -498,7 +598,7 @@ export const INITIAL_TABLES: RestaurantTable[] = [
     activeOrderId: 'demo_order_outback_1',
     currentCovers: 5,
     openedAt: new Date(Date.now() - 45 * 60000).toISOString(),
-    serverName: 'Cooper H',
+    serverName: 'Jack Murphy',
     x: 65,
     y: 40,
     zone: 'Beer Hall',
@@ -520,7 +620,7 @@ export const INITIAL_TABLES: RestaurantTable[] = [
 
 export const INITIAL_STAFF: StaffMember[] = [
   { id: 'st_1', name: 'Chloe Watson', role: 'manager', pin: '1111', avatarColor: '#8b5cf6' },
-  { id: 'st_2', name: 'Jack Miller', role: 'cashier', pin: '2222', avatarColor: '#10b981' },
+  { id: 'st_2', name: 'Jack Murphy', role: 'cashier', pin: '2222', avatarColor: '#10b981' },
   { id: 'st_3', name: 'Sarah Jenkins', role: 'waitstaff', pin: '3333', avatarColor: '#3b82f6' },
   { id: 'st_4', name: 'Chef Marco Rossi', role: 'kitchen', pin: '4444', avatarColor: '#f59e0b' },
 ];
