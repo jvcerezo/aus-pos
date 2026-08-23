@@ -25,7 +25,7 @@ export const AdminPortalScreen: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-5.25rem)] bg-slate-100 select-none overflow-hidden">
+    <div className="flex-1 flex flex-col h-[calc(100vh-5.75rem)] bg-slate-100 select-none overflow-hidden">
       {/* Admin Module Switcher Bar */}
       <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center space-x-2">

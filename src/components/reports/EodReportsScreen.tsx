@@ -50,7 +50,7 @@ export const EodReportsScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-5.25rem)] bg-slate-100 p-4 lg:p-6 overflow-y-auto select-none">
+    <div className="flex-1 flex flex-col h-[calc(100vh-5.75rem)] bg-slate-100 p-4 lg:p-6 overflow-y-auto select-none">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
         <div>

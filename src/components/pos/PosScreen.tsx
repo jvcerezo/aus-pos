@@ -24,7 +24,7 @@ export const PosScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row h-[calc(100vh-5.25rem)] bg-slate-100 overflow-hidden">
+    <div className="flex-1 flex flex-col lg:flex-row h-[calc(100vh-5.75rem)] bg-slate-100 overflow-hidden">
       {/* Left: Active Tickets Switcher & Menu Product Grid */}
       <ProductGrid />
 

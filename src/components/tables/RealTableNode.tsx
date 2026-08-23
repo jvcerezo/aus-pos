@@ -24,28 +24,28 @@ export const RealTableNode: React.FC<RealTableNodeProps> = ({
     switch (status) {
       case 'available':
         return {
-          tableBg: 'bg-white border-2 border-emerald-500 text-slate-900',
+          tableBg: 'bg-white border-2 border-emerald-500 text-slate-900 shadow-sm',
           chairBg: 'bg-slate-300 border border-slate-400',
           badge: 'bg-emerald-100 text-emerald-800',
           statusText: 'Open',
         };
       case 'occupied':
         return {
-          tableBg: 'bg-sky-100 border-2 border-sky-600 text-slate-900 shadow-xs',
+          tableBg: 'bg-sky-100 border-2 border-sky-600 text-slate-900 shadow-sm',
           chairBg: 'bg-sky-400 border border-sky-600',
           badge: 'bg-sky-200 text-sky-900 font-bold',
           statusText: 'Dining',
         };
       case 'bill_printed':
         return {
-          tableBg: 'bg-amber-100 border-2 border-amber-600 text-slate-900 shadow-xs',
+          tableBg: 'bg-amber-100 border-2 border-amber-600 text-slate-900 shadow-sm',
           chairBg: 'bg-amber-400 border border-amber-600',
           badge: 'bg-amber-200 text-amber-900 font-bold',
           statusText: 'Bill Req',
         };
       case 'reserved':
         return {
-          tableBg: 'bg-purple-100 border-2 border-purple-500 text-slate-900',
+          tableBg: 'bg-purple-100 border-2 border-purple-500 text-slate-900 shadow-sm',
           chairBg: 'bg-purple-300 border border-purple-400',
           badge: 'bg-purple-200 text-purple-900',
           statusText: 'Reserved',
@@ -64,7 +64,7 @@ export const RealTableNode: React.FC<RealTableNodeProps> = ({
 
   // Render Realistic Chairs based on shape and capacity
   const renderChairs = (shape: TableShape, capacity: number) => {
-    const chairClass = `w-3 h-3 rounded-full ${visuals.chairBg}`;
+    const chairClass = `w-3.5 h-3.5 rounded-full ${visuals.chairBg}`;
 
     if (shape === 'bar_stool') {
       return (
@@ -99,13 +99,13 @@ export const RealTableNode: React.FC<RealTableNodeProps> = ({
       const chairsPerRow = Math.max(1, Math.floor(capacity / 2));
       return (
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-2 left-0 right-0 flex justify-around px-2">
+          <div className="absolute -top-2.5 left-0 right-0 flex justify-around px-2">
             {Array.from({ length: chairsPerRow }).map((_, i) => (
               <div key={`t-${i}`} className={`${chairClass} rounded-t-sm rounded-b-none`} />
             ))}
           </div>
 
-          <div className="absolute -bottom-2 left-0 right-0 flex justify-around px-2">
+          <div className="absolute -bottom-2.5 left-0 right-0 flex justify-around px-2">
             {Array.from({ length: chairsPerRow }).map((_, i) => (
               <div key={`b-${i}`} className={`${chairClass} rounded-b-sm rounded-t-none`} />
             ))}
@@ -116,7 +116,7 @@ export const RealTableNode: React.FC<RealTableNodeProps> = ({
 
     if (shape === 'booth') {
       return (
-        <div className="absolute -inset-1.5 rounded-xl border-2 border-amber-800/40 bg-amber-100/40 pointer-events-none -z-10" />
+        <div className="absolute -inset-2 rounded-2xl border-2 border-amber-800/40 bg-amber-100/40 pointer-events-none -z-10" />
       );
     }
 
@@ -127,15 +127,15 @@ export const RealTableNode: React.FC<RealTableNodeProps> = ({
   const getShapeStyles = (shape: TableShape) => {
     switch (shape) {
       case 'round':
-        return 'w-22 h-22 sm:w-26 sm:h-26 rounded-full';
+        return 'w-24 h-24 sm:w-28 sm:h-28 rounded-full';
       case 'square':
-        return 'w-22 h-22 sm:w-26 sm:h-26 rounded-xl';
+        return 'w-24 h-24 sm:w-28 sm:h-28 rounded-2xl';
       case 'rectangle':
-        return 'w-34 h-22 sm:w-40 sm:h-26 rounded-xl';
+        return 'w-36 h-24 sm:w-44 sm:h-28 rounded-2xl';
       case 'booth':
-        return 'w-30 h-22 sm:w-34 sm:h-26 rounded-lg';
+        return 'w-32 h-24 sm:w-38 sm:h-28 rounded-xl';
       case 'bar_stool':
-        return 'w-14 h-14 sm:w-16 sm:h-16 rounded-full';
+        return 'w-16 h-16 sm:w-18 sm:h-18 rounded-full';
     }
   };
 
@@ -152,35 +152,35 @@ export const RealTableNode: React.FC<RealTableNodeProps> = ({
       {renderChairs(table.shape, table.capacity)}
 
       <div
-        className={`relative flex flex-col items-center justify-center p-1.5 text-center transition-all ${getShapeStyles(
+        className={`relative flex flex-col items-center justify-center p-2 text-center transition-all ${getShapeStyles(
           table.shape
         )} ${visuals.tableBg}`}
       >
-        <div className="font-black text-sm sm:text-base tracking-tight leading-none text-slate-900">
+        <div className="font-black text-base sm:text-lg tracking-tight leading-none text-slate-900">
           {table.name}
         </div>
 
         {activeOrder ? (
-          <div className="mt-0.5 flex flex-col items-center leading-tight">
-            <span className="font-mono font-black text-xs text-slate-900">
+          <div className="mt-1 flex flex-col items-center leading-tight">
+            <span className="font-mono font-black text-sm text-slate-900">
               {formatAud(orderTotals?.payableTotal || 0)}
             </span>
-            <div className="flex items-center space-x-1 text-[10px] text-slate-600 mt-0.5">
+            <div className="flex items-center space-x-1 text-xs text-slate-700 mt-0.5 font-bold">
               <span>{itemsCount} itm</span>
               {elapsed !== null && (
-                <span className="font-mono font-bold text-amber-800">
+                <span className="font-mono font-bold text-amber-900">
                   • {elapsed}m
                 </span>
               )}
             </div>
           </div>
         ) : (
-          <div className="mt-0.5 flex flex-col items-center">
-            <span className="text-[10px] text-slate-600 font-semibold flex items-center gap-0.5">
-              <Users className="w-2.5 h-2.5" />
+          <div className="mt-1 flex flex-col items-center">
+            <span className="text-xs text-slate-700 font-bold flex items-center gap-0.5">
+              <Users className="w-3 h-3" />
               <span>{table.capacity}p</span>
             </span>
-            <span className={`text-[9px] font-bold px-1 py-0.2 rounded mt-0.5 ${visuals.badge}`}>
+            <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded mt-0.5 ${visuals.badge}`}>
               {visuals.statusText}
             </span>
           </div>
