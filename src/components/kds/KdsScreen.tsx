@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useVenue } from '../../context/VenueContext';
 import { usePos } from '../../context/PosContext';
-import type { OrderItem } from '../../types';
+import type { Order, OrderItem } from '../../types';
 import { formatAusTime, getElapsedMinutes } from '../../utils/formatters';
 
 export const KdsScreen: React.FC = () => {
@@ -17,6 +17,7 @@ export const KdsScreen: React.FC = () => {
   } = usePos();
 
   const [courseFilter, setCourseFilter] = useState<'all' | OrderItem['course']>('all');
+  const [orderToBump, setOrderToBump] = useState<Order | null>(null);
   const [, setTimerTick] = useState(0);
 
   // Re-render every 15 seconds to keep live elapsed timers accurate
@@ -48,6 +49,13 @@ export const KdsScreen: React.FC = () => {
     { id: 'dessert', label: 'Desserts' },
     { id: 'sides', label: 'Sides' },
   ];
+
+  const handleConfirmBump = () => {
+    if (orderToBump) {
+      bumpEntireOrder(orderToBump.id);
+      setOrderToBump(null);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-5.25rem)] bg-slate-100 p-4 select-none overflow-hidden">
@@ -193,10 +201,10 @@ export const KdsScreen: React.FC = () => {
                     })}
                   </div>
 
-                  {/* Ticket Bump Action */}
+                  {/* Ticket Bump Action with Confirmation */}
                   <div className="p-2.5 bg-slate-50 border-t border-slate-200">
                     <button
-                      onClick={() => bumpEntireOrder(order.id)}
+                      onClick={() => setOrderToBump(order)}
                       className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition shadow-xs ${
                         allDone
                           ? 'bg-[#10b981] hover:bg-[#059669] text-white'
@@ -204,7 +212,7 @@ export const KdsScreen: React.FC = () => {
                       }`}
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>{allDone ? 'Order Ready (Bump)' : 'Mark All Items Ready'}</span>
+                      <span>{allDone ? 'Bump Ticket (Complete)' : 'Mark All Items Ready'}</span>
                     </button>
                   </div>
                 </div>
@@ -213,6 +221,34 @@ export const KdsScreen: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Bump Ticket Confirmation Modal */}
+      {orderToBump && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-300 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative text-slate-900">
+            <h3 className="text-base font-bold text-slate-900 mb-1">Bump Kitchen Ticket?</h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Mark Order #{orderToBump.orderNumber} ({orderToBump.tableName ? `Table ${orderToBump.tableName}` : 'Takeaway'}) as complete and remove from KDS rail?
+            </p>
+
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setOrderToBump(null)}
+                className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleConfirmBump}
+                className="px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white text-xs font-bold rounded-xl shadow-xs"
+              >
+                Complete Ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

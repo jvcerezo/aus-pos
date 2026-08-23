@@ -7,16 +7,20 @@ import {
   CreditCard,
   Banknote,
   Receipt,
-  Split
+  Split,
+  History,
+  AlertTriangle
 } from 'lucide-react';
 import { useVenue } from '../../context/VenueContext';
 import { usePos } from '../../context/PosContext';
-import type { OrderItem } from '../../types';
+import type { Order, OrderItem } from '../../types';
 import { formatAud, formatAusTime } from '../../utils/formatters';
 import { calculateItemTotal, calculateOrderTotals } from '../../utils/gst';
-import { sounds } from '../../utils/sound';
 import { DiscountModal } from './DiscountModal';
 import { SplitBillModal } from './SplitBillModal';
+import { OrderCompletedModal } from './OrderCompletedModal';
+import { OrdersHistoryModal } from './OrdersHistoryModal';
+import { ReceiptModal } from '../payments/ReceiptModal';
 
 interface OrderCartProps {
   onOpenPaymentModal: (customAmount?: number, label?: string) => void;
@@ -26,6 +30,7 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
   const { activeVenue } = useVenue();
   const {
     currentOrder,
+    setCurrentOrder,
     updateItemQuantity,
     removeItemFromOrder,
     setItemCourse,
@@ -33,13 +38,49 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
     setOrderCustomerInfo,
     startNewTakeawayOrder,
     quickSettleOrder,
+    lastCompletedOrder,
+    setLastCompletedOrder,
+    updateTableStatus,
   } = usePos();
 
   const [isDiscountOpen, setIsDiscountOpen] = useState(false);
   const [isSplitOpen, setIsSplitOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isEditingGuest, setIsEditingGuest] = useState(false);
+  const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<Order | null>(null);
+
+  // Safety Confirmation States
+  const [isConfirmCashOpen, setIsConfirmCashOpen] = useState(false);
+  const [isConfirmVoidOpen, setIsConfirmVoidOpen] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState<string | null>(null);
+  const [isKitchenFiredNotice, setIsKitchenFiredNotice] = useState(false);
+
   const [tempGuestName, setTempGuestName] = useState(currentOrder?.customerName || '');
   const [tempBuzzer, setTempBuzzer] = useState(currentOrder?.buzzerNumber || '');
+
+  // If there's an active completed order modal
+  const handlePrintCompleted = () => {
+    if (lastCompletedOrder) {
+      setSelectedReceiptOrder(lastCompletedOrder);
+    }
+  };
+
+  const handleReopenCompleted = () => {
+    if (lastCompletedOrder) {
+      const reopened: Order = {
+        ...lastCompletedOrder,
+        isPaid: false,
+        status: 'open',
+        splitPayments: [],
+      };
+
+      if (reopened.tableId) {
+        updateTableStatus(reopened.tableId, 'occupied');
+      }
+      setCurrentOrder(reopened);
+      setLastCompletedOrder(null);
+    }
+  };
 
   if (!currentOrder || currentOrder.items.length === 0) {
     return (
@@ -55,16 +96,55 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
             Select items from the catalog or open a table to start an order.
           </p>
 
-          <button
-            onClick={() => {
-              sounds.playTap();
+          <div className="flex flex-col space-y-2 w-full max-w-xs">
+            <button
+              onClick={() => startNewTakeawayOrder()}
+              className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-3 rounded-xl transition shadow-xs"
+            >
+              Start Counter / Bar Order
+            </button>
+
+            <button
+              onClick={() => setIsHistoryOpen(true)}
+              className="flex items-center justify-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 rounded-xl border border-slate-200 transition"
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Recall / View Past Orders</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Order Completed Modal */}
+        {lastCompletedOrder && (
+          <OrderCompletedModal
+            order={lastCompletedOrder}
+            onClose={() => setLastCompletedOrder(null)}
+            onPrintReceipt={handlePrintCompleted}
+            onReopenOrder={handleReopenCompleted}
+            onNewSale={() => {
+              setLastCompletedOrder(null);
               startNewTakeawayOrder();
             }}
-            className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-xs"
-          >
-            Start Takeaway / Bar Order
-          </button>
-        </div>
+          />
+        )}
+
+        {/* Orders History Modal */}
+        {isHistoryOpen && (
+          <OrdersHistoryModal
+            isOpen={isHistoryOpen}
+            onClose={() => setIsHistoryOpen(false)}
+            onSelectOrderToPrint={order => setSelectedReceiptOrder(order)}
+          />
+        )}
+
+        {/* Receipt Modal */}
+        {selectedReceiptOrder && (
+          <ReceiptModal
+            order={selectedReceiptOrder}
+            isOpen={!!selectedReceiptOrder}
+            onClose={() => setSelectedReceiptOrder(null)}
+          />
+        )}
       </div>
     );
   }
@@ -77,12 +157,26 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
 
   const handleFireKitchen = () => {
     fireOrderToKitchen();
+    setIsKitchenFiredNotice(true);
+    setTimeout(() => setIsKitchenFiredNotice(false), 2500);
   };
 
   const handleSaveGuestInfo = () => {
     setOrderCustomerInfo(tempGuestName || 'Takeaway Guest', tempBuzzer);
     setIsEditingGuest(false);
-    sounds.playTap();
+  };
+
+  const handleConfirmCashPayment = () => {
+    quickSettleOrder('cash');
+    setIsConfirmCashOpen(false);
+  };
+
+  const handleConfirmVoidOrder = () => {
+    if (currentOrder.tableId) {
+      updateTableStatus(currentOrder.tableId, 'available');
+    }
+    setCurrentOrder(null);
+    setIsConfirmVoidOpen(false);
   };
 
   return (
@@ -94,7 +188,7 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
             <span className="font-mono font-bold text-xs bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded">
               #{currentOrder.orderNumber}
             </span>
-            <h3 className="font-bold text-sm text-slate-900 truncate max-w-[140px]">
+            <h3 className="font-bold text-sm text-slate-900 truncate max-w-[130px]">
               {currentOrder.tableName ? `Table ${currentOrder.tableName}` : (currentOrder.customerName || 'Takeaway')}
             </h3>
             {currentOrder.buzzerNumber && (
@@ -108,17 +202,26 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            sounds.playTap();
-            setTempGuestName(currentOrder.customerName || '');
-            setTempBuzzer(currentOrder.buzzerNumber || '');
-            setIsEditingGuest(!isEditingGuest);
-          }}
-          className="text-xs text-slate-600 hover:text-slate-900 font-semibold px-2 py-1 bg-white border border-slate-200 rounded-lg shadow-xs"
-        >
-          {isEditingGuest ? 'Done' : 'Edit'}
-        </button>
+        <div className="flex items-center space-x-1">
+          <button
+            onClick={() => setIsHistoryOpen(true)}
+            title="View Past Orders"
+            className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 shadow-xs"
+          >
+            <History className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={() => {
+              setTempGuestName(currentOrder.customerName || '');
+              setTempBuzzer(currentOrder.buzzerNumber || '');
+              setIsEditingGuest(!isEditingGuest);
+            }}
+            className="text-xs text-slate-600 hover:text-slate-900 font-semibold px-2 py-1 bg-white border border-slate-200 rounded-lg shadow-xs"
+          >
+            {isEditingGuest ? 'Done' : 'Edit'}
+          </button>
+        </div>
       </div>
 
       {/* Guest Info Edit Bar */}
@@ -146,6 +249,16 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
           >
             Save Info
           </button>
+        </div>
+      )}
+
+      {/* Kitchen Fired Success Notice */}
+      {isKitchenFiredNotice && (
+        <div className="bg-amber-100 border-b border-amber-300 text-amber-900 p-2 text-xs font-bold flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            <Send className="w-3.5 h-3.5" />
+            <span>Fired {currentOrder.items.length} items to Kitchen (KDS)!</span>
+          </span>
         </div>
       )}
 
@@ -219,7 +332,7 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
                   <button
                     onClick={() => {
                       if (item.quantity === 1) {
-                        removeItemFromOrder(item.id);
+                        setItemToRemove(item.id);
                       } else {
                         updateItemQuantity(item.id, -1);
                       }
@@ -287,27 +400,21 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
         </div>
       </div>
 
-      {/* Checkout Actions (Square Register Style) */}
+      {/* Checkout Actions */}
       <div className="p-3 bg-white border-t border-slate-200 space-y-2">
-        {/* Big Solid Green Charge Button (Square's iconic full-width button) */}
+        {/* Full-width Charge Button */}
         <button
-          onClick={() => {
-            sounds.playTap();
-            onOpenPaymentModal();
-          }}
+          onClick={() => onOpenPaymentModal()}
           className="w-full bg-[#10b981] hover:bg-[#059669] active:bg-[#047857] text-white py-3.5 rounded-xl font-black text-base shadow-sm transition transform active:translate-y-0.5 flex items-center justify-center space-x-2"
         >
           <CreditCard className="w-5 h-5" />
           <span>Charge {formatAud(remainingPayable)}</span>
         </button>
 
-        {/* 1-Click Fast Tender Shortcuts */}
+        {/* 1-Click Fast Tender & Kitchen Shortcuts */}
         <div className="grid grid-cols-3 gap-1.5">
           <button
-            onClick={() => {
-              sounds.playTap();
-              quickSettleOrder('cash');
-            }}
+            onClick={() => setIsConfirmCashOpen(true)}
             className="bg-slate-100 hover:bg-slate-200 text-slate-800 py-2 rounded-lg text-xs font-bold border border-slate-200 flex items-center justify-center space-x-1 transition"
           >
             <Banknote className="w-3.5 h-3.5" />
@@ -315,10 +422,7 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
           </button>
 
           <button
-            onClick={() => {
-              sounds.playTap();
-              handleFireKitchen();
-            }}
+            onClick={handleFireKitchen}
             className="bg-amber-100 hover:bg-amber-200 text-amber-900 py-2 rounded-lg text-xs font-bold border border-amber-300 flex items-center justify-center space-x-1 transition"
           >
             <Send className="w-3.5 h-3.5" />
@@ -326,19 +430,148 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
           </button>
 
           <button
-            onClick={() => {
-              sounds.playTap();
-              setIsSplitOpen(true);
-            }}
+            onClick={() => setIsSplitOpen(true)}
             className="bg-slate-100 hover:bg-slate-200 text-slate-800 py-2 rounded-lg text-xs font-bold border border-slate-200 flex items-center justify-center space-x-1 transition"
           >
             <Split className="w-3.5 h-3.5" />
             <span>Split Bill</span>
           </button>
         </div>
+
+        {/* Secondary Safety Controls: Void Order & Discount */}
+        <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500">
+          <button
+            onClick={() => setIsDiscountOpen(true)}
+            className="text-amber-700 font-bold hover:underline"
+          >
+            + Add Discount
+          </button>
+
+          <button
+            onClick={() => setIsConfirmVoidOpen(true)}
+            className="text-rose-600 font-bold hover:underline"
+          >
+            Void / Cancel Order
+          </button>
+        </div>
       </div>
 
-      {/* Modals */}
+      {/* 1. Confirm Cash Payment Safety Modal */}
+      {isConfirmCashOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-300 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative text-slate-900">
+            <h3 className="text-base font-bold text-slate-900 mb-1">Confirm Cash Payment</h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Complete exact cash sale of <strong className="text-slate-900 font-mono">{formatAud(remainingPayable)}</strong> for{' '}
+              {currentOrder.tableName ? `Table ${currentOrder.tableName}` : 'Takeaway'}?
+            </p>
+
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setIsConfirmCashOpen(false)}
+                className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleConfirmCashPayment}
+                className="px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white text-xs font-bold rounded-xl shadow-xs"
+              >
+                Confirm Cash & Settle
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Confirm Void Order Safety Modal */}
+      {isConfirmVoidOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-300 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative text-slate-900">
+            <div className="w-10 h-10 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+
+            <h3 className="text-base font-bold text-slate-900 text-center mb-1">Void Current Order?</h3>
+            <p className="text-xs text-slate-500 text-center mb-4">
+              Are you sure you want to void Order #{currentOrder.orderNumber}? All {currentOrder.items.length} items will be cleared.
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setIsConfirmVoidOpen(false)}
+                className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl"
+              >
+                Keep Order
+              </button>
+
+              <button
+                onClick={handleConfirmVoidOrder}
+                className="py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-xs"
+              >
+                Yes, Void Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Confirm Item Removal Modal */}
+      {itemToRemove && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-300 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative text-slate-900">
+            <h3 className="text-base font-bold text-slate-900 mb-1">Remove Item?</h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Remove "{currentOrder.items.find(i => i.id === itemToRemove)?.name}" from the active order?
+            </p>
+
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setItemToRemove(null)}
+                className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900"
+              >
+                Keep Item
+              </button>
+
+              <button
+                onClick={() => {
+                  removeItemFromOrder(itemToRemove);
+                  setItemToRemove(null);
+                }}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-xs"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Order Completed Success Modal */}
+      {lastCompletedOrder && (
+        <OrderCompletedModal
+          order={lastCompletedOrder}
+          onClose={() => setLastCompletedOrder(null)}
+          onPrintReceipt={handlePrintCompleted}
+          onReopenOrder={handleReopenCompleted}
+          onNewSale={() => {
+            setLastCompletedOrder(null);
+            startNewTakeawayOrder();
+          }}
+        />
+      )}
+
+      {/* 5. Orders History Modal */}
+      {isHistoryOpen && (
+        <OrdersHistoryModal
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          onSelectOrderToPrint={order => setSelectedReceiptOrder(order)}
+        />
+      )}
+
+      {/* 6. Modals */}
       {isDiscountOpen && (
         <DiscountModal
           isOpen={isDiscountOpen}
@@ -354,6 +587,15 @@ export const OrderCart: React.FC<OrderCartProps> = ({ onOpenPaymentModal }) => {
             setIsSplitOpen(false);
             onOpenPaymentModal(amount, label);
           }}
+        />
+      )}
+
+      {/* 7. Tax Invoice / Receipt Modal */}
+      {selectedReceiptOrder && (
+        <ReceiptModal
+          order={selectedReceiptOrder}
+          isOpen={!!selectedReceiptOrder}
+          onClose={() => setSelectedReceiptOrder(null)}
         />
       )}
     </div>
